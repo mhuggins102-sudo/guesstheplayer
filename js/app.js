@@ -62,7 +62,7 @@
     const difficulty = difficultySelect.value;
     const mystery = Game.startGame(currentMode, era, difficulty);
 
-    if (!mystery) {
+    if (!mystery || mystery.empty) {
       playerInput.placeholder = 'No players match these filters...';
       playerInput.disabled = true;
       return;
@@ -70,7 +70,11 @@
 
     playerInput.placeholder = 'Type a player name...';
     playerInput.disabled = false;
-    UI.setupGrid(mystery);
+
+    // Daily mode: set up grid immediately. Practice: defer until first guess.
+    if (!mystery.deferred) {
+      UI.setupGrid(mystery);
+    }
 
     // Clear saved state for practice mode
     if (currentMode === 'practice') {
@@ -81,6 +85,22 @@
   function onPlayerSelected(player) {
     if (Game.alreadyGuessed(player.id)) {
       playerInput.placeholder = 'Already guessed! Try another...';
+      return;
+    }
+
+    // Practice mode: first guess sets up the grid based on player type
+    const mystery = Game.getMysteryPlayer();
+    if (!mystery) {
+      // This is the first guess in practice mode — makeGuess will pick the mystery player
+      Game.makeGuess(player);
+      const picked = Game.getMysteryPlayer();
+      if (!picked) return;
+      UI.setupGrid(picked);
+      // Re-render the first guess now that we have the grid
+      const state = Game.getState();
+      const lastGuess = state.guesses[state.guesses.length - 1];
+      UI.renderGuess(lastGuess.result);
+      if (lastGuess.result.isCorrect) onWin();
       return;
     }
 

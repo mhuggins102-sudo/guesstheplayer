@@ -3,7 +3,7 @@
  */
 const UI = (() => {
   const HITTER_COLS = ['Name', 'Pos', 'Debut', 'Teams', 'AVG', 'HR', 'RBI', 'H', 'SB', 'BB', 'OPS', 'XBH%', 'WAR'];
-  const PITCHER_COLS = ['Name', 'Pos', 'Debut', 'Teams', 'W', 'L', 'ERA', 'SO', 'SV', 'BB', 'WHIP', 'WAR'];
+  const PITCHER_COLS = ['Name', 'Debut', 'Teams', 'W', 'L', 'ERA', 'SO', 'SV', 'BB', 'WHIP', 'WAR'];
 
   const HITTER_STAT_KEYS = ['avg', 'hr', 'rbi', 'h', 'sb', 'bb', 'ops', 'xbh_pct', 'war'];
   const PITCHER_STAT_KEYS = ['w', 'l', 'era', 'so', 'sv', 'bb', 'whip', 'war'];
@@ -48,8 +48,10 @@ const UI = (() => {
     // Name cell
     row.appendChild(buildNameCell(result.name));
 
-    // Position cell
-    row.appendChild(buildCell(result.position.value, result.position.state));
+    // Position cell (hitters only — all pitchers are P)
+    if (currentType === 'hitter') {
+      row.appendChild(buildCell(result.position.value, result.position.state));
+    }
 
     // Debut cell
     row.appendChild(buildStatCell(result.debut));
@@ -187,8 +189,10 @@ const UI = (() => {
       let row = '';
       // Name
       row += r.isCorrect ? '\u2b50' : '\u2b1b';
-      // Position
-      row += stateEmoji(r.position.state);
+      // Position (hitters only)
+      if (currentType === 'hitter') {
+        row += stateEmoji(r.position.state);
+      }
       // Debut
       row += stateEmoji(r.debut.state);
       // Teams

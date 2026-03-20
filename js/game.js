@@ -30,10 +30,11 @@ const Game = (() => {
     guesses = [];
     isOver = false;
     isWon = false;
+    mysteryPlayer = null;
 
     const pool = DataManager.filterPool(era, difficulty);
     if (pool.length === 0) {
-      return null;
+      return { empty: true };
     }
 
     if (mode === 'daily') {
@@ -41,16 +42,31 @@ const Game = (() => {
       const seed = dateHash(today + getDailyKey());
       const index = seed % pool.length;
       mysteryPlayer = pool[index];
-    } else {
-      const index = Math.floor(Math.random() * pool.length);
-      mysteryPlayer = pool[index];
+      return mysteryPlayer;
     }
 
+    // Practice mode: defer selection until first guess
+    return { deferred: true };
+  }
+
+  function pickPracticePlayer(isHitter) {
+    const pool = DataManager.filterPool(era, difficulty).filter(p => {
+      return isHitter ? DataManager.isHitter(p) : !DataManager.isHitter(p);
+    });
+    if (pool.length === 0) return null;
+    const index = Math.floor(Math.random() * pool.length);
+    mysteryPlayer = pool[index];
     return mysteryPlayer;
   }
 
   function makeGuess(player) {
     if (isOver) return null;
+
+    // Practice mode: pick mystery player on first guess based on guessed type
+    if (!mysteryPlayer) {
+      const picked = pickPracticePlayer(DataManager.isHitter(player));
+      if (!picked) return null;
+    }
 
     const result = compare(player, mysteryPlayer);
     guesses.push({ player, result });
