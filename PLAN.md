@@ -9,7 +9,8 @@ A Wordle-style MLB player guessing game built with plain HTML/CSS/JS. The user g
 
 1. User selects **mode**: Daily Puzzle or Practice (random)
 2. User optionally filters player pool by **era** (e.g., all-time, 2000+, active only)
-3. A mystery player is selected (deterministic for daily, random for practice)
+3. User optionally selects **difficulty** (Easy, Medium, Hard) — controls player obscurity
+4. A mystery player is selected (deterministic for daily, random for practice)
 4. User types a player name into a **search/autocomplete** input
 5. On guess, a row appears showing:
    - **Player name** — with first/last letter highlighting if they match the mystery player
@@ -53,13 +54,29 @@ We'll build a **Python preprocessing script** (`scripts/build_data.py`) that:
 
 **`data/hitters.json`** — fields per player:
 ```
-name, debut_year, final_year, teams[], position, games, hits, home_runs, rbi, batting_avg, stolen_bases, war
+name, debut_year, final_year, teams[], position, games, hits, home_runs, rbi, batting_avg, stolen_bases, walks, ops, xbh_pct, war, fame_tier
 ```
 
 **`data/pitchers.json`** — fields per player:
 ```
-name, debut_year, final_year, teams[], position, games, wins, losses, era, strikeouts, saves, war
+name, debut_year, final_year, teams[], position, games, wins, losses, era, strikeouts, saves, walks, whip, war, fame_tier
 ```
+
+### Difficulty / Fame Tiers
+
+The build script assigns each player a `fame_tier` (1–3) based on career WAR and All-Star/award recognition:
+
+| Tier | Label | Criteria (approximate) |
+|------|-------|------------------------|
+| 1 | Easy | Hall of Famers, MVP/Cy Young winners, career WAR ≥ 50 |
+| 2 | Medium | All-Stars, career WAR 20–50, well-known starters |
+| 3 | Hard | Role players, journeymen, career WAR < 20 |
+
+- **Easy mode**: only tier 1 players (small pool of famous players)
+- **Medium mode**: tier 1 + tier 2
+- **Hard mode**: all players (includes obscure players)
+
+The autocomplete always searches the full pool (so users can guess anyone), but the mystery player is drawn from the difficulty-filtered pool.
 
 ### Why preprocess?
 - The raw Lahman data is season-by-season; we need career aggregates
@@ -144,7 +161,8 @@ guesstheplayer/
 ```
 ┌─────────────────────────────────┐
 │  ⚾ GUESS THE PLAYER            │
-│  [Daily] [Practice]  [Era ▼]   │
+│  [Daily] [Practice]             │
+│  [Era ▼]  [Difficulty ▼]       │
 ├─────────────────────────────────┤
 │  🔍 [Type a player name...   ]  │
 │     ┌─ autocomplete dropdown ─┐ │
@@ -209,7 +227,7 @@ guesstheplayer/
 
 1. **Data source**: Lahman CSVs from MLB-Matchups + Sports-Degrees repos, preprocessed via Python script
 2. **Stats displayed**:
-   - Hitters: AVG, HR, RBI, H, SB, WAR
-   - Pitchers: W, ERA, SO, SV, WHIP, WAR
+   - Hitters: AVG, HR, RBI, H, SB, BB, OPS, XBH%, WAR
+   - Pitchers: W, L, ERA, SO, SV, BB, WHIP, WAR
 3. **Era filters**: All-Time, 1960+, 1980+, 2000+, Active
 4. **Hosting**: Cloudflare Workers & Pages (connected to GitHub)
