@@ -106,13 +106,12 @@ const Game = (() => {
       if (targetTeams.has(t)) overlap++;
     }
     const teamCountDir = direction(guessedTeams.size, targetTeams.size);
+    const teamsExact = guessedTeams.size === targetTeams.size && overlap === targetTeams.size;
     result.teams = {
+      value: guessedTeams.size,
       overlap,
-      targetCount: targetTeams.size,
-      guessedCount: guessedTeams.size,
       direction: teamCountDir,
-      state: guessedTeams.size === targetTeams.size && overlap === targetTeams.size ? 'match'
-        : overlap > 0 ? 'close' : 'miss',
+      state: teamsExact ? 'match' : overlap > 0 ? 'match' : 'miss',
     };
 
     // Stats — depends on whether target is hitter or pitcher

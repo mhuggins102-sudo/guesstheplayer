@@ -131,7 +131,7 @@ const UI = (() => {
 
     const valEl = document.createElement('span');
     valEl.className = 'guess-cell__value';
-    valEl.textContent = `${teams.overlap}/${teams.targetCount}`;
+    valEl.textContent = teams.value;
     cell.appendChild(valEl);
 
     if (teams.direction !== 'equal') {
