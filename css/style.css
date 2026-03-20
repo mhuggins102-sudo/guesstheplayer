@@ -1,0 +1,363 @@
+:root {
+  --color-bg: #1a1a2e;
+  --color-surface: #16213e;
+  --color-surface-alt: #0f3460;
+  --color-text: #e8e8e8;
+  --color-text-muted: #a0a0b0;
+  --color-accent: #e94560;
+  --color-green: #2ecc71;
+  --color-yellow: #f1c40f;
+  --color-red: #e74c3c;
+  --color-gray: #636e72;
+  --color-match: var(--color-green);
+  --color-close: var(--color-yellow);
+  --color-miss: var(--color-red);
+  --radius: 8px;
+  --radius-sm: 4px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --max-width: 900px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.hidden { display: none !important; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.header__title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.header__subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.controls__modes {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.controls__filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+.btn {
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn--mode {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.btn--mode.btn--active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.btn--give-up {
+  background: var(--color-gray);
+  color: #fff;
+  margin-top: 0.5rem;
+}
+
+.btn--new-game {
+  background: var(--color-accent);
+  color: #fff;
+  margin-top: 0.5rem;
+}
+
+.btn--share {
+  background: var(--color-green);
+  color: #fff;
+  margin-top: 0.75rem;
+}
+
+/* Select */
+.select {
+  font-family: var(--font);
+  font-size: 0.85rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-surface-alt);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  appearance: auto;
+}
+
+/* Search */
+.search {
+  padding: 0.75rem 0;
+}
+
+.search__wrapper {
+  position: relative;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.search__input {
+  width: 100%;
+  font-family: var(--font);
+  font-size: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 2px solid var(--color-surface-alt);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search__input:focus {
+  border-color: var(--color-accent);
+}
+
+.search__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Autocomplete */
+.autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-alt);
+  border-radius: 0 0 var(--radius) var(--radius);
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+}
+
+.autocomplete.open { display: block; }
+
+.autocomplete__item {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.1s;
+}
+
+.autocomplete__item:hover,
+.autocomplete__item.active {
+  background: var(--color-surface-alt);
+}
+
+.autocomplete__item-pos {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+/* Guesses */
+.guesses {
+  padding: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.guesses__header {
+  display: grid;
+  gap: 4px;
+  padding: 0.5rem 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.guesses__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Guess Row */
+.guess-row {
+  display: grid;
+  gap: 4px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.guess-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.3rem;
+  min-height: 48px;
+  text-align: center;
+  font-size: 0.78rem;
+  position: relative;
+}
+
+.guess-cell__value {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.guess-cell__label {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.guess-cell__arrow {
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* Cell states */
+.guess-cell--match {
+  background: var(--color-match);
+  color: #fff;
+}
+
+.guess-cell--close {
+  background: var(--color-close);
+  color: #1a1a2e;
+}
+
+.guess-cell--miss {
+  background: var(--color-miss);
+  color: #fff;
+}
+
+.guess-cell--neutral {
+  background: var(--color-gray);
+  color: #fff;
+}
+
+/* Name cell */
+.guess-cell--name {
+  flex-direction: row;
+  gap: 2px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.name-letter--match {
+  background: var(--color-green);
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+/* Game actions */
+.game-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Result panel */
+.result {
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  border: 2px solid var(--color-surface-alt);
+}
+
+.result__title {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.result__answer {
+  font-size: 1.1rem;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.result__stats {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* Responsive grid columns — set by JS based on hitter/pitcher */
+.guesses__header,
+.guess-row {
+  grid-template-columns: var(--grid-cols);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .header__title { font-size: 1.4rem; }
+  .guess-cell { padding: 0.3rem 0.2rem; min-height: 40px; }
+  .guess-cell__value { font-size: 0.75rem; }
+  .guess-cell--name { font-size: 0.7rem; }
+  .controls { gap: 0.5rem; }
+}
+
+/* Celebration animation */
+@keyframes celebrate {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.result--win {
+  animation: celebrate 0.5s ease-in-out;
+  border-color: var(--color-green);
+}
