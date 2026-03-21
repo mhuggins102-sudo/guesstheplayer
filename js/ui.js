@@ -268,7 +268,8 @@ const UI = (() => {
     let imgHtml = '';
     if (player.mlbam_id) {
       imgHtml = '<img class="player-card__img" src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/' +
-        player.mlbam_id + '/headshot/67/current" alt="' + player.name + '" />';
+        player.mlbam_id + '/headshot/67/current" alt="' + player.name +
+        '" onerror="this.style.display=\'none\'" />';
     }
 
     let awardsHtml = '';
