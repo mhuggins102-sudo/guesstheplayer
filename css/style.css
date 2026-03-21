@@ -466,6 +466,52 @@ body {
 .help-swatch--red { background: var(--color-red); }
 .help-swatch--gray { background: var(--color-gray); }
 
+.help-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+}
+.help-cat {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.help-cat strong {
+  display: inline;
+  margin-right: 0.3rem;
+}
+.help-cat__desc {
+  color: var(--color-text-muted);
+}
+.help-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  color: #fff;
+}
+.help-tag--green { background: var(--color-green); }
+.help-tag--yellow { background: var(--color-yellow); color: #1a1a2e; }
+.help-tag--red { background: var(--color-red); }
+.help-tag--gray { background: var(--color-gray); }
+.help-cat-divider {
+  height: 1px;
+  background: var(--color-surface-alt);
+  margin: 0.4rem 0;
+}
+.help-cat-group {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--color-text-muted);
+  margin-bottom: 0;
+}
+
 /* Hint banner */
 .hint-banner {
   text-align: center;

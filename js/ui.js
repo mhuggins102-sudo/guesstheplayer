@@ -168,7 +168,7 @@ const UI = (() => {
 
     if (colName === 'Debut') {
       const range = computeRange(guesses, g => g.result.debut, g => parseFloat(g.result.debut.value));
-      showPopup(anchorEl, '<div class="popup__title">Debut Year</div><div class="popup__body">' + formatRange(range) + '</div>');
+      showPopup(anchorEl, '<div class="popup__title">Debut Year</div><div class="popup__body">' + formatRange(range, true) + '</div>');
       return;
     }
 
@@ -209,13 +209,15 @@ const UI = (() => {
     return { lower, upper, exact };
   }
 
-  function formatRange(range) {
+  function formatRange(range, isYear) {
     if (range.exact !== null) return 'Exactly <strong>' + range.exact + '</strong>';
+    var lowerLabel = isYear ? 'After' : 'More than';
+    var upperLabel = isYear ? 'Before' : 'Less than';
     if (range.lower !== null && range.upper !== null) {
       return 'Between <strong>' + range.lower + '</strong> and <strong>' + range.upper + '</strong>';
     }
-    if (range.lower !== null) return 'At least <strong>' + range.lower + '</strong>';
-    if (range.upper !== null) return 'At most <strong>' + range.upper + '</strong>';
+    if (range.lower !== null) return lowerLabel + ' <strong>' + range.lower + '</strong>';
+    if (range.upper !== null) return upperLabel + ' <strong>' + range.upper + '</strong>';
     return 'No data yet';
   }
 
@@ -531,10 +533,12 @@ const UI = (() => {
     const rowH = cellH + gap;
     const canvasH = headerH + colHeaderH + gap + guesses.length * rowH + footerH + pad;
 
+    const scale = 2; // HiDPI: render at 2x for sharp output
     const canvas = document.createElement('canvas');
-    canvas.width = canvasW;
-    canvas.height = canvasH;
+    canvas.width = canvasW * scale;
+    canvas.height = canvasH * scale;
     const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
 
     // Background
     ctx.fillStyle = '#1a1a2e';
