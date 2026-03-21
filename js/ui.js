@@ -275,11 +275,12 @@ const UI = (() => {
     let awardsHtml = '';
     if (player.awards && player.awards.length > 0) {
       awardsHtml = '<div class="player-card__awards">' +
-        player.awards.map(function(a) {
+        player.awards.map(function(a, i) {
           var label = typeof a === 'string' ? a : a.label;
           var years = (a && a.years) ? a.years : '';
-          return '<span class="player-card__award" title="' + years + '">' + label + '</span>';
-        }).join('') + '</div>';
+          return '<span class="player-card__award" data-award-idx="' + i + '" data-award-years="' + years + '">' + label + '</span>';
+        }).join('') + '</div>' +
+        '<div class="player-card__award-detail" id="award-detail"></div>';
     }
 
     playerCardBody.innerHTML =
@@ -292,6 +293,32 @@ const UI = (() => {
       '<div class="player-card__teams">' + player.teams.join(' · ') + '</div>' +
       '<div class="player-card__divider"></div>' +
       '<div class="player-card__stats">' + statsHtml + '</div>';
+
+    // Award tap to show years
+    var awardsEl = playerCardBody.querySelector('.player-card__awards');
+    var detailEl = playerCardBody.querySelector('#award-detail');
+    if (awardsEl && detailEl) {
+      awardsEl.addEventListener('click', function(e) {
+        var badge = e.target.closest('[data-award-years]');
+        if (!badge) return;
+        var years = badge.getAttribute('data-award-years');
+        if (!years) return;
+        var label = badge.textContent;
+        // Toggle: tap same badge again to hide
+        if (badge.classList.contains('player-card__award--active')) {
+          badge.classList.remove('player-card__award--active');
+          detailEl.textContent = '';
+          detailEl.classList.remove('player-card__award-detail--visible');
+        } else {
+          awardsEl.querySelectorAll('.player-card__award--active').forEach(function(el) {
+            el.classList.remove('player-card__award--active');
+          });
+          badge.classList.add('player-card__award--active');
+          detailEl.textContent = label + ': ' + years;
+          detailEl.classList.add('player-card__award-detail--visible');
+        }
+      });
+    }
 
     playerCardModal.classList.remove('hidden');
   }
