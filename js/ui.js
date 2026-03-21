@@ -32,7 +32,7 @@ const UI = (() => {
 
   let headerEl, rowsEl, resultEl, resultTitle, resultAnswer, resultStats;
   let giveUpBtn, newGameBtn, shareBtn;
-  let dailyInfoEl, popupEl;
+  let popupEl;
   let currentType = null;
 
   function init() {
@@ -45,7 +45,6 @@ const UI = (() => {
     giveUpBtn = document.getElementById('give-up-btn');
     newGameBtn = document.getElementById('new-game-btn');
     shareBtn = document.getElementById('share-btn');
-    dailyInfoEl = document.getElementById('daily-info');
 
     // Create reusable popup element
     popupEl = document.createElement('div');
@@ -58,23 +57,6 @@ const UI = (() => {
         hidePopup();
       }
     });
-  }
-
-  // -- Daily info banner --
-
-  function showDailyInfo(info) {
-    if (!dailyInfoEl) return;
-    const typeLabel = info.type === 'hitter' ? 'Hitter' : 'Pitcher';
-    const diffLabel = info.difficulty.charAt(0).toUpperCase() + info.difficulty.slice(1);
-    const eraLabel = ERA_LABELS[info.era] || info.era;
-    dailyInfoEl.innerHTML =
-      '<span class="daily-info__type">Looking for a <strong>' + typeLabel + '</strong></span>' +
-      '<span class="daily-info__settings">' + eraLabel + ' &middot; ' + diffLabel + '</span>';
-    dailyInfoEl.classList.remove('hidden');
-  }
-
-  function hideDailyInfo() {
-    if (dailyInfoEl) dailyInfoEl.classList.add('hidden');
   }
 
   // -- Popup helpers --
@@ -356,7 +338,7 @@ const UI = (() => {
   function hideResult() {
     resultEl.classList.add('hidden');
     resultEl.classList.remove('result--win');
-    giveUpBtn.classList.remove('hidden');
+    giveUpBtn.classList.add('hidden');
     newGameBtn.classList.add('hidden');
   }
 
@@ -492,7 +474,6 @@ const UI = (() => {
   return {
     init, setupGrid, renderGuess, clearGuesses,
     showResult, hideResult, generateShareText,
-    showDailyInfo, hideDailyInfo,
     showLeaderboard, hideLeaderboard,
   };
 })();

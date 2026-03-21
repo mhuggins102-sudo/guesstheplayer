@@ -384,21 +384,15 @@ body {
   border-color: var(--color-accent);
 }
 
-/* Daily info banner */
-.daily-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface-alt);
-  border-radius: var(--radius);
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-.daily-info__type strong {
+/* Daily-locked selects */
+.select--daily {
+  border-color: var(--color-accent);
   color: var(--color-accent);
+}
+.select--daily:disabled {
+  opacity: 1;
+  appearance: none;
+  cursor: default;
 }
 
 /* Popup */

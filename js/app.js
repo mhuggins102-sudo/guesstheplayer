@@ -19,7 +19,7 @@
   const leaderboardClose = document.getElementById('leaderboard-close');
   const leaderboardModal = document.getElementById('leaderboard-modal');
 
-  let currentMode = 'daily';
+  let currentMode = 'practice';
   let lbFilters = { era: 'all', difficulty: 'all' };
 
   // Initialize
@@ -36,10 +36,8 @@
 
   Autocomplete.init(playerInput, autocompleteList, onPlayerSelected);
 
-  // Try to restore daily game
-  if (!restoreDailyState()) {
-    startNewGame();
-  }
+  // Start in practice mode
+  startNewGame();
 
   // Event listeners
   modeButtons.forEach(btn => {
@@ -48,6 +46,7 @@
       if (newMode === currentMode) return;
       currentMode = newMode;
       modeButtons.forEach(b => b.classList.toggle('btn--active', b.dataset.mode === currentMode));
+      if (currentMode === 'daily' && restoreDailyState()) return;
       startNewGame();
     });
   });
@@ -87,19 +86,10 @@
   function startNewGame() {
     UI.clearGuesses();
     UI.hideResult();
-    UI.hideDailyInfo();
     Autocomplete.setEnabled(true);
 
     const era = eraSelect.value;
     const difficulty = difficultySelect.value;
-
-    if (currentMode === 'daily') {
-      // Disable difficulty selector — daily auto-determines it
-      difficultySelect.disabled = true;
-    } else {
-      difficultySelect.disabled = false;
-    }
-
     const mystery = Game.startGame(currentMode, era, difficulty);
 
     if (!mystery || mystery.empty) {
@@ -108,17 +98,27 @@
       return;
     }
 
-    playerInput.placeholder = 'Type a player name...';
     playerInput.disabled = false;
 
     if (currentMode === 'daily') {
       const info = Game.getDailyInfo();
-      if (info) UI.showDailyInfo(info);
-      UI.setupGrid(mystery);
-    }
-    // Practice: defer grid setup until first guess
+      if (info) {
+        // Lock dropdowns to daily settings
+        difficultySelect.value = info.difficulty;
+        difficultySelect.disabled = true;
+        eraSelect.classList.add('select--daily');
+        difficultySelect.classList.add('select--daily');
 
-    if (currentMode === 'practice') {
+        const typeLabel = info.type === 'hitter' ? "hitter's" : "pitcher's";
+        playerInput.placeholder = `Type a ${typeLabel} name...`;
+      }
+      UI.setupGrid(mystery);
+    } else {
+      // Practice mode
+      eraSelect.classList.remove('select--daily');
+      difficultySelect.classList.remove('select--daily');
+      difficultySelect.disabled = false;
+      playerInput.placeholder = 'Type a player name...';
       clearDailyState();
     }
   }
@@ -139,6 +139,7 @@
       const state = Game.getState();
       const lastGuess = state.guesses[state.guesses.length - 1];
       UI.renderGuess(lastGuess.result);
+      giveUpBtn.classList.remove('hidden');
       if (lastGuess.result.isCorrect) onWin();
       return;
     }
@@ -147,6 +148,7 @@
     if (!result) return;
 
     UI.renderGuess(result);
+    giveUpBtn.classList.remove('hidden');
     saveDailyState();
 
     if (result.isCorrect) {
@@ -226,11 +228,18 @@
       const mystery = Game.startGame('daily', era, difficulty);
       if (!mystery || mystery.empty) return false;
 
-      // Disable difficulty selector for daily
-      difficultySelect.disabled = true;
-
+      // Lock dropdowns for daily
       const info = Game.getDailyInfo();
-      if (info) UI.showDailyInfo(info);
+      if (info) {
+        difficultySelect.value = info.difficulty;
+        difficultySelect.disabled = true;
+        eraSelect.classList.add('select--daily');
+        difficultySelect.classList.add('select--daily');
+
+        const typeLabel = info.type === 'hitter' ? "hitter's" : "pitcher's";
+        playerInput.placeholder = `Type a ${typeLabel} name...`;
+      }
+
       UI.setupGrid(mystery);
 
       const allPlayers = DataManager.getAllPlayers();
@@ -240,6 +249,11 @@
           const result = Game.makeGuess(player);
           if (result) UI.renderGuess(result);
         }
+      }
+
+      // Show give-up if guesses were made
+      if (data.guessIds.length > 0 && !data.isOver) {
+        giveUpBtn.classList.remove('hidden');
       }
 
       if (data.isOver) {
