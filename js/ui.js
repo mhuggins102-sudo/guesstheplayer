@@ -26,7 +26,7 @@ const UI = (() => {
   };
 
   const ERA_LABELS = {
-    'all': 'All-Time', '1960': '1960+', '1980': '1980+',
+    'all': 'All-Time', '1940': '1940+', '1960': '1960+', '1980': '1980+',
     '2000': '2000+', 'active': 'Active',
   };
 
@@ -548,6 +548,7 @@ const UI = (() => {
       '<select id="lb-era" class="select select--sm">' +
       '<option value="all"' + (eraFilter === 'all' ? ' selected' : '') + '>All Eras</option>' +
       '<option value="all-time"' + (eraFilter === 'all-time' ? ' selected' : '') + '>All-Time</option>' +
+      '<option value="1940"' + (eraFilter === '1940' ? ' selected' : '') + '>1940+</option>' +
       '<option value="1960"' + (eraFilter === '1960' ? ' selected' : '') + '>1960+</option>' +
       '<option value="1980"' + (eraFilter === '1980' ? ' selected' : '') + '>1980+</option>' +
       '<option value="2000"' + (eraFilter === '2000' ? ' selected' : '') + '>2000+</option>' +

@@ -30,7 +30,8 @@ const DataManager = (() => {
       }
       if (era !== 'all') {
         const minYear = parseInt(era, 10);
-        if (p.debut_year < minYear) return false;
+        const endYear = p.final_year || new Date().getFullYear();
+        if (endYear < minYear) return false;
       }
       return true;
     });
