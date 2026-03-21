@@ -271,7 +271,16 @@ const UI = (() => {
         player.mlbam_id + '/headshot/67/current" alt="' + player.name + '" />';
     }
 
+    let awardsHtml = '';
+    if (player.awards && player.awards.length > 0) {
+      awardsHtml = '<div class="player-card__awards">' +
+        player.awards.map(function(a) {
+          return '<span class="player-card__award">' + a + '</span>';
+        }).join('') + '</div>';
+    }
+
     playerCardBody.innerHTML =
+      awardsHtml +
       imgHtml +
       '<div class="player-card__name"><a href="' + bbrefUrl + '" target="_blank" rel="noopener">' +
         player.name + '</a></div>' +

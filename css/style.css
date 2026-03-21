@@ -461,6 +461,24 @@ body {
 .player-card__body {
   padding: 1.25rem 1rem 1rem;
 }
+.player-card__awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 0.6rem;
+}
+.player-card__award {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: var(--color-yellow);
+  color: #1a1a2e;
+  border-radius: 3px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
 .player-card__img {
   width: 96px;
   height: 96px;

@@ -156,9 +156,10 @@ def build_war_lookup(filename, bbref_to_player):
     return lookup
 
 
-def build_hitters(people, appearances, batting_rows, war_lookup, mlbam_lookup=None):
+def build_hitters(people, appearances, batting_rows, war_lookup, mlbam_lookup=None, awards_lookup=None):
     """Aggregate batting stats into career totals."""
     mlbam_lookup = mlbam_lookup or {}
+    awards_lookup = awards_lookup or {}
     # Group batting rows by playerID
     career = defaultdict(lambda: {
         'G': 0, 'AB': 0, 'R': 0, 'H': 0, '2B': 0, '3B': 0,
@@ -230,14 +231,16 @@ def build_hitters(people, appearances, batting_rows, war_lookup, mlbam_lookup=No
             'xbh_pct': xbh_pct,
             'war': round(war, 1),
             'fame_tier': fame,
+            'awards': awards_lookup.get(pid, []),
         })
 
     return sorted(hitters, key=lambda x: x['name'])
 
 
-def build_pitchers(people, appearances, pitching_rows, war_lookup, mlbam_lookup=None):
+def build_pitchers(people, appearances, pitching_rows, war_lookup, mlbam_lookup=None, awards_lookup=None):
     """Aggregate pitching stats into career totals."""
     mlbam_lookup = mlbam_lookup or {}
+    awards_lookup = awards_lookup or {}
     career = defaultdict(lambda: {
         'W': 0, 'L': 0, 'G': 0, 'GS': 0, 'CG': 0, 'SHO': 0,
         'SV': 0, 'IPouts': 0, 'H': 0, 'ER': 0, 'HR': 0,
@@ -295,9 +298,60 @@ def build_pitchers(people, appearances, pitching_rows, war_lookup, mlbam_lookup=
             'ip': round(ip, 1),
             'war': round(war, 1),
             'fame_tier': fame,
+            'awards': awards_lookup.get(pid, []),
         })
 
     return sorted(pitchers, key=lambda x: x['name'])
+
+
+# Awards we care about for player cards
+DISPLAY_AWARDS = {
+    'Most Valuable Player': 'MVP',
+    'Cy Young Award': 'Cy Young',
+    'Gold Glove': 'Gold Glove',
+    'Silver Slugger': 'Silver Slugger',
+    'Rookie of the Year': 'ROY',
+    'World Series MVP': 'WS MVP',
+    'Hank Aaron Award': 'Hank Aaron',
+    'Platinum Glove': 'Platinum Glove',
+    'Reliever of the Year': 'Reliever of the Year',
+    'Comeback Player of the Year': 'Comeback POY',
+    'All-Star Game MVP': 'ASG MVP',
+    'Triple Crown': 'Triple Crown',
+    'Pitching Triple Crown': 'Pitching Triple Crown',
+}
+
+
+def build_awards_lookup():
+    """Build playerID -> list of award strings like '3x Gold Glove'."""
+    path = os.path.join(RAW, 'AwardsPlayers.csv')
+    if not os.path.exists(path):
+        print('  Warning: AwardsPlayers.csv not found, skipping awards')
+        return {}
+    # Count awards per player per award type
+    counts = defaultdict(lambda: defaultdict(int))
+    with open(path, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            pid = (row.get('playerID') or '').strip()
+            award = (row.get('awardID') or '').strip()
+            if pid and award and award in DISPLAY_AWARDS:
+                counts[pid][award] += 1
+    # Format as display strings
+    lookup = {}
+    for pid, awards in counts.items():
+        display = []
+        for award_id, short in DISPLAY_AWARDS.items():
+            count = awards.get(award_id, 0)
+            if count == 0:
+                continue
+            if count == 1:
+                display.append(short)
+            else:
+                display.append(f'{count}x {short}')
+        if display:
+            lookup[pid] = display
+    return lookup
 
 
 def build_mlbam_lookup():
@@ -330,13 +384,14 @@ def main():
     war_bat = build_war_lookup('career_war_bat.csv', bbref_to_player)
     war_pit = build_war_lookup('career_war_pit.csv', bbref_to_player)
     mlbam_lookup = build_mlbam_lookup()
+    awards_lookup = build_awards_lookup()
 
     print('Building hitters...')
-    hitters = build_hitters(people, appearances, batting_rows, war_bat, mlbam_lookup)
+    hitters = build_hitters(people, appearances, batting_rows, war_bat, mlbam_lookup, awards_lookup)
     print(f'  {len(hitters)} hitters (min {MIN_PA_HITTER} PA, non-pitcher)')
 
     print('Building pitchers...')
-    pitchers = build_pitchers(people, appearances, pitching_rows, war_pit, mlbam_lookup)
+    pitchers = build_pitchers(people, appearances, pitching_rows, war_pit, mlbam_lookup, awards_lookup)
     print(f'  {len(pitchers)} pitchers (min {MIN_IPOUTS_PITCHER} IPouts)')
 
     # Fame tier breakdown
