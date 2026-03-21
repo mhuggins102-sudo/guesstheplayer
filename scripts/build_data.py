@@ -123,6 +123,7 @@ def build_people_lookup(people_rows):
             'name_last': row.get('nameLast', '').strip(),
             'debut_year': debut_year,
             'final_year': final_year,
+            'bbref_id': row.get('bbrefID', '').strip() or pid,
         }
         bbref_id = row.get('bbrefID', '').strip()
         if bbref_id:
@@ -209,6 +210,7 @@ def build_hitters(people, appearances, batting_rows, war_lookup):
 
         hitters.append({
             'id': pid,
+            'bbref_id': bio['bbref_id'],
             'name': f"{bio['name_first']} {bio['name_last']}",
             'debut_year': bio['debut_year'],
             'final_year': bio['final_year'],
@@ -270,6 +272,7 @@ def build_pitchers(people, appearances, pitching_rows, war_lookup):
 
         pitchers.append({
             'id': pid,
+            'bbref_id': bio['bbref_id'],
             'name': f"{bio['name_first']} {bio['name_last']}",
             'debut_year': bio['debut_year'],
             'final_year': bio['final_year'],
@@ -283,6 +286,7 @@ def build_pitchers(people, appearances, pitching_rows, war_lookup):
             'saves': stats['SV'],
             'walks': stats['BB'],
             'whip': whip,
+            'ip': round(ip, 1),
             'war': round(war, 1),
             'fame_tier': fame,
         })

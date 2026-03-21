@@ -33,6 +33,7 @@ const UI = (() => {
   let headerEl, rowsEl, resultEl, resultTitle, resultAnswer, resultStats;
   let giveUpBtn, newGameBtn, shareBtn;
   let popupEl;
+  let playerCardModal, playerCardBody, playerCardClose;
   let currentType = null;
   let revealedValues = {}; // colName -> display value (from hints)
 
@@ -46,6 +47,18 @@ const UI = (() => {
     giveUpBtn = document.getElementById('give-up-btn');
     newGameBtn = document.getElementById('new-game-btn');
     shareBtn = document.getElementById('share-btn');
+
+    playerCardModal = document.getElementById('player-card-modal');
+    playerCardBody = document.getElementById('player-card-body');
+    playerCardClose = document.getElementById('player-card-close');
+    if (playerCardClose) {
+      playerCardClose.addEventListener('click', () => playerCardModal.classList.add('hidden'));
+    }
+    if (playerCardModal) {
+      playerCardModal.addEventListener('click', (e) => {
+        if (e.target === playerCardModal) playerCardModal.classList.add('hidden');
+      });
+    }
 
     // Create reusable popup element
     popupEl = document.createElement('div');
@@ -206,14 +219,72 @@ const UI = (() => {
     return 'No data yet';
   }
 
+  // -- Player card --
+
+  function showPlayerCard(player) {
+    if (!playerCardModal || !playerCardBody) return;
+
+    const isHitter = DataManager.isHitter(player);
+    const years = player.debut_year + '–' + (player.final_year || 'Present');
+    const bbrefUrl = 'https://www.baseball-reference.com/players/' +
+      player.bbref_id.charAt(0) + '/' + player.bbref_id + '.shtml';
+
+    let statsHtml = '';
+    if (isHitter) {
+      const stats = [
+        { label: 'WAR', val: player.war },
+        { label: 'BA', val: player.batting_avg.toFixed(3) },
+        { label: 'OPS', val: player.ops.toFixed(3) },
+        { label: 'HR', val: player.home_runs },
+        { label: 'RBI', val: player.rbi },
+        { label: 'SB', val: player.stolen_bases },
+        { label: 'XBH%', val: player.xbh_pct.toFixed(1) + '%' },
+        { label: 'H', val: player.hits },
+        { label: 'BB', val: player.walks },
+      ];
+      for (const s of stats) {
+        statsHtml += '<div class="player-card__stat"><span class="player-card__stat-val">' +
+          s.val + '</span><span class="player-card__stat-label">' + s.label + '</span></div>';
+      }
+    } else {
+      const kbb = player.walks > 0 ? (player.strikeouts / player.walks).toFixed(2) : '—';
+      const stats = [
+        { label: 'WAR', val: player.war },
+        { label: 'W', val: player.wins },
+        { label: 'L', val: player.losses },
+        { label: 'ERA', val: player.era.toFixed(2) },
+        { label: 'WHIP', val: player.whip.toFixed(3) },
+        { label: 'IP', val: player.ip },
+        { label: 'SO', val: player.strikeouts },
+        { label: 'BB', val: player.walks },
+        { label: 'K/BB', val: kbb },
+      ];
+      for (const s of stats) {
+        statsHtml += '<div class="player-card__stat"><span class="player-card__stat-val">' +
+          s.val + '</span><span class="player-card__stat-label">' + s.label + '</span></div>';
+      }
+    }
+
+    playerCardBody.innerHTML =
+      '<div class="player-card__name"><a href="' + bbrefUrl + '" target="_blank" rel="noopener">' +
+        player.name + '</a></div>' +
+      '<div class="player-card__years">' + years + '</div>' +
+      '<div class="player-card__pos">' + player.position + '</div>' +
+      '<div class="player-card__teams">' + player.teams.join(' · ') + '</div>' +
+      '<div class="player-card__divider"></div>' +
+      '<div class="player-card__stats">' + statsHtml + '</div>';
+
+    playerCardModal.classList.remove('hidden');
+  }
+
   // -- Guess rendering --
 
-  function renderGuess(result) {
+  function renderGuess(result, player) {
     const row = document.createElement('div');
     row.className = 'guess-row';
 
     // Name cell
-    row.appendChild(buildNameCell(result.name));
+    row.appendChild(buildNameCell(result.name, player));
 
     // Position cell (hitters only)
     if (currentType === 'hitter') {
@@ -242,9 +313,16 @@ const UI = (() => {
     row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  function buildNameCell(nameData) {
+  function buildNameCell(nameData, player) {
     const cell = document.createElement('div');
     cell.className = 'guess-cell guess-cell--name';
+    if (player) {
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPlayerCard(player);
+      });
+    }
 
     const parts = nameData.value.split(' ');
     const firstName = parts[0] || '';
@@ -333,18 +411,26 @@ const UI = (() => {
     revealedValues = {};
   }
 
-  function showResult(won, player, guessCount) {
+  function showResult(won, player, guessCount, isDaily) {
     resultEl.classList.remove('hidden');
     resultEl.classList.toggle('result--win', won);
 
     resultTitle.textContent = won ? 'You got it!' : 'Game Over';
     resultAnswer.textContent = player.name;
-    resultStats.textContent = won
-      ? `Solved in ${guessCount} guess${guessCount !== 1 ? 'es' : ''}`
-      : `The answer was ${player.name}`;
 
-    giveUpBtn.classList.add('hidden');
-    newGameBtn.classList.remove('hidden');
+    if (isDaily) {
+      resultStats.textContent = won
+        ? `Solved in ${guessCount} guess${guessCount !== 1 ? 'es' : ''}. Come back tomorrow!`
+        : `The answer was ${player.name}. Come back tomorrow!`;
+      giveUpBtn.classList.add('hidden');
+      newGameBtn.classList.add('hidden');
+    } else {
+      resultStats.textContent = won
+        ? `Solved in ${guessCount} guess${guessCount !== 1 ? 'es' : ''}`
+        : `The answer was ${player.name}`;
+      giveUpBtn.classList.add('hidden');
+      newGameBtn.classList.remove('hidden');
+    }
   }
 
   function hideResult() {

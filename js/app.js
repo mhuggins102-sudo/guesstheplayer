@@ -145,7 +145,7 @@
       UI.setupGrid(picked);
       const state = Game.getState();
       const lastGuess = state.guesses[state.guesses.length - 1];
-      UI.renderGuess(lastGuess.result);
+      UI.renderGuess(lastGuess.result, lastGuess.player);
       giveUpBtn.classList.remove('hidden');
       updateHintButton();
       if (lastGuess.result.isCorrect) onWin();
@@ -155,7 +155,7 @@
     const result = Game.makeGuess(player);
     if (!result) return;
 
-    UI.renderGuess(result);
+    UI.renderGuess(result, player);
     giveUpBtn.classList.remove('hidden');
     updateHintButton();
     saveDailyState();
@@ -169,7 +169,7 @@
     const state = Game.getState();
     Autocomplete.setEnabled(false);
     hintBtn.classList.add('hidden');
-    UI.showResult(true, state.mysteryPlayer, state.guesses.length);
+    UI.showResult(true, state.mysteryPlayer, state.guesses.length, currentMode === 'daily');
 
     if (currentMode === 'daily') {
       updateStreak(true);
@@ -183,7 +183,7 @@
     if (!player) return; // Practice mode with no guesses yet
     Autocomplete.setEnabled(false);
     hintBtn.classList.add('hidden');
-    UI.showResult(false, player, Game.getGuessCount());
+    UI.showResult(false, player, Game.getGuessCount(), currentMode === 'daily');
 
     if (currentMode === 'daily') {
       updateStreak(false);
@@ -310,7 +310,7 @@
         const player = allPlayers.find(p => p.id === gid);
         if (player) {
           const result = Game.makeGuess(player);
-          if (result) UI.renderGuess(result);
+          if (result) UI.renderGuess(result, player);
         }
       }
 
@@ -321,7 +321,7 @@
 
       if (data.isOver) {
         Autocomplete.setEnabled(false);
-        UI.showResult(data.isWon, mystery, data.guessIds.length);
+        UI.showResult(data.isWon, mystery, data.guessIds.length, true);
       }
 
       return true;

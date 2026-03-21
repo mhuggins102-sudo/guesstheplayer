@@ -445,6 +445,86 @@ body {
   line-height: 1.5;
 }
 
+/* Player card */
+.player-card {
+  max-width: 300px;
+  text-align: center;
+  padding: 0;
+  position: relative;
+}
+.player-card .modal__close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  z-index: 2;
+}
+.player-card__body {
+  padding: 1.25rem 1rem 1rem;
+}
+.player-card__name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 0.1rem;
+  color: var(--color-text);
+}
+.player-card__name a {
+  color: inherit;
+  text-decoration: none;
+}
+.player-card__name a:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+.player-card__years {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.6rem;
+}
+.player-card__pos {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--color-surface-alt);
+  border-radius: 3px;
+  padding: 2px 8px;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-muted);
+}
+.player-card__teams {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+.player-card__divider {
+  height: 1px;
+  background: var(--color-surface-alt);
+  margin: 0.5rem 0;
+}
+.player-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem 0.25rem;
+}
+.player-card__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.player-card__stat-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+.player-card__stat-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
 /* Modal overlay */
 .modal-overlay {
   position: fixed;
