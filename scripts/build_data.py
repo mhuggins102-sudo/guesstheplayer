@@ -86,13 +86,14 @@ def get_primary_position(appearances_rows):
 
 
 def get_teams(appearances_rows):
-    """Get unique franchise list from appearances."""
-    teams = set()
+    """Get franchise list sorted by games played (most games first)."""
+    team_games = defaultdict(int)
     for row in appearances_rows:
         tid = row.get('teamID', '').strip()
         if tid:
-            teams.add(normalize_team(tid))
-    return sorted(teams)
+            team_games[normalize_team(tid)] += safe_int(row.get('G_all', 0))
+    # Sort by games descending so primary team is first
+    return [t for t, _ in sorted(team_games.items(), key=lambda x: -x[1])]
 
 
 def compute_fame_tier(war, is_high_war):
@@ -106,8 +107,9 @@ def compute_fame_tier(war, is_high_war):
 
 
 def build_people_lookup(people_rows):
-    """Build playerID -> bio info lookup."""
+    """Build playerID -> bio info lookup, and bbrefID -> playerID mapping."""
     lookup = {}
+    bbref_to_player = {}
     for row in people_rows:
         pid = row.get('playerID', '').strip()
         if not pid:
@@ -122,7 +124,10 @@ def build_people_lookup(people_rows):
             'debut_year': debut_year,
             'final_year': final_year,
         }
-    return lookup
+        bbref_id = row.get('bbrefID', '').strip()
+        if bbref_id:
+            bbref_to_player[bbref_id] = pid
+    return lookup, bbref_to_player
 
 
 def build_appearances_lookup(appearances_rows):
@@ -135,14 +140,18 @@ def build_appearances_lookup(appearances_rows):
     return lookup
 
 
-def build_war_lookup(filename):
-    """Build playerID -> career WAR."""
+def build_war_lookup(filename, bbref_to_player):
+    """Build playerID -> career WAR using bbrefID mapping."""
     lookup = {}
     rows = read_csv(filename)
     for row in rows:
-        pid = row.get('player_ID', '').strip()
-        if pid:
-            lookup[pid] = safe_float(row.get('careerWAR', 0))
+        bbref_id = row.get('player_ID', '').strip()
+        if not bbref_id:
+            continue
+        war = safe_float(row.get('careerWAR', 0))
+        # Map bbrefID back to Lahman playerID
+        pid = bbref_to_player.get(bbref_id, bbref_id)
+        lookup[pid] = war
     return lookup
 
 
@@ -289,10 +298,10 @@ def main():
     pitching_rows = read_csv('Pitching.csv')
 
     print('Building lookups...')
-    people = build_people_lookup(people_rows)
+    people, bbref_to_player = build_people_lookup(people_rows)
     appearances = build_appearances_lookup(appearances_rows)
-    war_bat = build_war_lookup('career_war_bat.csv')
-    war_pit = build_war_lookup('career_war_pit.csv')
+    war_bat = build_war_lookup('career_war_bat.csv', bbref_to_player)
+    war_pit = build_war_lookup('career_war_pit.csv', bbref_to_player)
 
     print('Building hitters...')
     hitters = build_hitters(people, appearances, batting_rows, war_bat)
