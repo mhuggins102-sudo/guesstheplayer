@@ -9,6 +9,9 @@
 <body>
   <div class="app">
     <header class="header">
+      <button class="help-btn" id="help-btn" aria-label="How to play" title="How to Play">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button>
       <h1 class="header__title">Guess The Player</h1>
       <p class="header__subtitle">MLB Edition</p>
       <button class="leaderboard-btn" id="leaderboard-btn" aria-label="View practice stats" title="Practice Stats">
@@ -93,6 +96,52 @@
           <button class="modal__close" id="leaderboard-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal__body" id="leaderboard-content"></div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay hidden" id="help-modal">
+      <div class="modal help-modal">
+        <div class="modal__header">
+          <h2 class="modal__title">How to Play</h2>
+          <button class="modal__close" id="help-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal__body help-body">
+          <p>Guess the mystery MLB player by comparing career stats!</p>
+
+          <h3>Getting Started</h3>
+          <p>Type a player name in the search bar and select from the suggestions. Each guess reveals how that player compares to the mystery player.</p>
+
+          <h3>Cell Colors</h3>
+          <div class="help-colors">
+            <div class="help-color"><span class="help-swatch help-swatch--green"></span><strong>Green</strong> &mdash; Exact match</div>
+            <div class="help-color"><span class="help-swatch help-swatch--yellow"></span><strong>Yellow</strong> &mdash; Close (within threshold)</div>
+            <div class="help-color"><span class="help-swatch help-swatch--red"></span><strong>Red</strong> &mdash; Far off</div>
+            <div class="help-color"><span class="help-swatch help-swatch--gray"></span><strong>Gray</strong> &mdash; N/A (wrong player type)</div>
+          </div>
+
+          <h3>Arrows</h3>
+          <p><strong>&uarr;</strong> means the mystery player's value is <em>higher</em>. <strong>&darr;</strong> means it's <em>lower</em>.</p>
+
+          <h3>Name Highlighting</h3>
+          <p>First or last name initials that match the mystery player are highlighted in green.</p>
+
+          <h3>Tap for Details</h3>
+          <ul>
+            <li><strong>Player name</strong> &mdash; opens a full stat card</li>
+            <li><strong>Column headers</strong> &mdash; shows the narrowed-down range based on your guesses</li>
+            <li><strong>Teams cell</strong> &mdash; shows which teams the guessed player played for</li>
+          </ul>
+
+          <h3>Hints</h3>
+          <p>After 4 guesses, a <strong>Hint</strong> button appears. Each hint reveals a specific stat value for the mystery player. Use them wisely!</p>
+
+          <h3>Game Modes</h3>
+          <ul>
+            <li><strong>Practice</strong> &mdash; Play unlimited games. Choose your era and difficulty.</li>
+            <li><strong>Daily</strong> &mdash; One puzzle per day, same for everyone. Era and difficulty are locked.</li>
+          </ul>
+        </div>
       </div>
     </div>
 

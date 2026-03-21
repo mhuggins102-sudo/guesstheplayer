@@ -513,21 +513,23 @@ const UI = (() => {
     const guesses = state.guesses;
     const isHitter = currentType === 'hitter';
     const statKeys = isHitter ? HITTER_STAT_KEYS : PITCHER_STAT_KEYS;
-
-    // Column count: Name + (Pos if hitter) + Debut + Teams + stats
-    const colCount = 1 + (isHitter ? 1 : 0) + 2 + statKeys.length;
+    const colHeaders = isHitter ? HITTER_COLS.slice(1) : PITCHER_COLS.slice(1); // exclude Name
 
     // Layout constants
-    const sq = 26;       // square size
-    const gap = 4;       // gap between squares
-    const pad = 28;      // padding
-    const headerH = 100; // space for title/info
-    const footerH = 36;  // bottom branding
-    const rowH = sq + gap;
+    const pad = 20;
+    const nameW = 110;    // width for player name column
+    const cellW = 38;     // width for each stat cell
+    const cellH = 26;     // height for each cell
+    const gap = 3;        // gap between cells
+    const headerH = 100;  // space for title/info
+    const colHeaderH = 20; // column header row height
+    const footerH = 36;
+    const colCount = colHeaders.length;
 
-    const gridW = colCount * (sq + gap) - gap;
+    const gridW = nameW + gap + colCount * (cellW + gap) - gap;
     const canvasW = gridW + pad * 2;
-    const canvasH = headerH + guesses.length * rowH + footerH + pad;
+    const rowH = cellH + gap;
+    const canvasH = headerH + colHeaderH + gap + guesses.length * rowH + footerH + pad;
 
     const canvas = document.createElement('canvas');
     canvas.width = canvasW;
@@ -569,43 +571,102 @@ const UI = (() => {
       miss: '#e74c3c',
       neutral: '#636e72',
     };
+    // Text color on colored backgrounds
+    const stateTextColor = {
+      match: '#ffffff',
+      close: '#1a1a2e',
+      miss: '#ffffff',
+      neutral: '#ffffff',
+    };
 
-    // Draw grid
     const gridX = pad;
     const gridY = headerH;
 
+    // Draw column headers
+    ctx.font = 'bold 8px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#a0a0b0';
+    ctx.textAlign = 'center';
+    for (let c = 0; c < colHeaders.length; c++) {
+      const x = gridX + nameW + gap + c * (cellW + gap) + cellW / 2;
+      ctx.fillText(colHeaders[c], x, gridY + colHeaderH - 4);
+    }
+
+    // Draw each guess row
+    const dataY = gridY + colHeaderH + gap;
+
     for (let i = 0; i < guesses.length; i++) {
-      const r = guesses[i].result;
-      const y = gridY + i * rowH;
-      let col = 0;
+      const g = guesses[i];
+      const r = g.result;
+      const y = dataY + i * rowH;
 
-      // Name square
-      ctx.fillStyle = r.isCorrect ? '#f1c40f' : '#2b2b4a';
-      fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
-      col++;
+      // Name cell
+      const nameColor = r.isCorrect ? '#f1c40f' : '#2b2b4a';
+      ctx.fillStyle = nameColor;
+      fillRoundRect(ctx, gridX, y, nameW, cellH, 4);
+      ctx.fillStyle = r.isCorrect ? '#1a1a2e' : '#e8e8e8';
+      ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      // Truncate name if too long
+      let displayName = g.player ? g.player.name : (r.name ? r.name.value : '');
+      while (ctx.measureText(displayName).width > nameW - 10 && displayName.length > 3) {
+        displayName = displayName.slice(0, -2) + '…';
+      }
+      ctx.fillText(displayName, gridX + 6, y + cellH / 2 + 4);
 
-      // Position (hitters only)
+      // Build ordered cells: Pos (hitter), Debut, Teams, stats
+      const cells = [];
       if (isHitter) {
-        ctx.fillStyle = stateColor[r.position.state] || '#636e72';
-        fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
-        col++;
+        cells.push({ state: r.position.state, value: r.position.value, direction: 'equal' });
+      }
+      cells.push({ state: r.debut.state, value: r.debut.value, direction: r.debut.direction });
+      cells.push({ state: r.teams.state, value: r.teams.value, direction: r.teams.direction });
+      for (const key of statKeys) {
+        const s = r.stats[key];
+        cells.push({ state: s.state, value: s.value, direction: s.direction });
       }
 
-      // Debut
-      ctx.fillStyle = stateColor[r.debut.state] || '#636e72';
-      fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
-      col++;
+      // Draw each stat cell with value or arrow
+      ctx.textAlign = 'center';
+      for (let c = 0; c < cells.length; c++) {
+        const cell = cells[c];
+        const x = gridX + nameW + gap + c * (cellW + gap);
+        const color = stateColor[cell.state] || '#636e72';
+        const textColor = stateTextColor[cell.state] || '#ffffff';
 
-      // Teams
-      ctx.fillStyle = stateColor[r.teams.state] || '#636e72';
-      fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
-      col++;
+        ctx.fillStyle = color;
+        fillRoundRect(ctx, x, y, cellW, cellH, 4);
 
-      // Stats
-      for (const key of statKeys) {
-        ctx.fillStyle = stateColor[r.stats[key].state] || '#636e72';
-        fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
-        col++;
+        // Determine what to show in the cell
+        ctx.fillStyle = textColor;
+        let cellText = '' + cell.value;
+        if (cell.state === 'match' && cell.direction === 'equal') {
+          // Exact match — show bullseye
+          ctx.font = '13px "Segoe UI", system-ui, sans-serif';
+          ctx.fillText('\u25CE', x + cellW / 2, y + cellH / 2 + 5);
+        } else if (cell.direction && cell.direction !== 'equal') {
+          // Has direction arrow — show value + arrow if it fits, else just arrow
+          const arrow = cell.direction === 'up' ? '\u2191' : '\u2193';
+          ctx.font = 'bold 9px "Segoe UI", system-ui, sans-serif';
+          const textWithArrow = cellText + arrow;
+          if (ctx.measureText(textWithArrow).width <= cellW - 6) {
+            ctx.fillText(textWithArrow, x + cellW / 2, y + cellH / 2 + 3);
+          } else if (ctx.measureText(cellText).width <= cellW - 6) {
+            // Value fits without arrow — show value, put arrow below
+            ctx.fillText(cellText, x + cellW / 2, y + cellH / 2 + 1);
+            ctx.font = '8px "Segoe UI", system-ui, sans-serif';
+            ctx.fillText(arrow, x + cellW / 2, y + cellH - 2);
+          } else {
+            // Nothing fits — just show arrow
+            ctx.font = 'bold 14px "Segoe UI", system-ui, sans-serif';
+            ctx.fillText(arrow, x + cellW / 2, y + cellH / 2 + 5);
+          }
+        } else {
+          // Neutral or no direction — show value if it fits
+          ctx.font = 'bold 9px "Segoe UI", system-ui, sans-serif';
+          if (ctx.measureText(cellText).width <= cellW - 6) {
+            ctx.fillText(cellText, x + cellW / 2, y + cellH / 2 + 3);
+          }
+        }
       }
     }
 

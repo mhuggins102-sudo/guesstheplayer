@@ -20,6 +20,9 @@
   const leaderboardBtn = document.getElementById('leaderboard-btn');
   const leaderboardClose = document.getElementById('leaderboard-close');
   const leaderboardModal = document.getElementById('leaderboard-modal');
+  const helpBtn = document.getElementById('help-btn');
+  const helpClose = document.getElementById('help-close');
+  const helpModal = document.getElementById('help-modal');
 
   let currentMode = 'practice';
   let lbFilters = { era: 'all', difficulty: 'all' };
@@ -59,6 +62,23 @@
   newGameBtn.addEventListener('click', startNewGame);
   shareBtn.addEventListener('click', onShare);
   hintBtn.addEventListener('click', onHint);
+
+  // Help modal
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      if (helpModal) helpModal.classList.remove('hidden');
+    });
+  }
+  if (helpClose) {
+    helpClose.addEventListener('click', () => {
+      if (helpModal) helpModal.classList.add('hidden');
+    });
+  }
+  if (helpModal) {
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) helpModal.classList.add('hidden');
+    });
+  }
 
   // Leaderboard
   if (leaderboardBtn) {
