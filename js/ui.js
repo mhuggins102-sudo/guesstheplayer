@@ -34,6 +34,7 @@ const UI = (() => {
   let giveUpBtn, newGameBtn, shareBtn;
   let popupEl;
   let currentType = null;
+  let revealedValues = {}; // colName -> display value (from hints)
 
   function init() {
     headerEl = document.getElementById('guesses-header');
@@ -80,6 +81,10 @@ const UI = (() => {
 
   function hidePopup() {
     popupEl.classList.add('hidden');
+  }
+
+  function revealStat(colName, value) {
+    revealedValues[colName] = value;
   }
 
   // -- Grid setup --
@@ -135,8 +140,14 @@ const UI = (() => {
       return;
     }
 
+    // Check if value was revealed by a hint
+    if (revealedValues[colName] !== undefined) {
+      const label = STAT_LABELS[colName] || colName;
+      showPopup(anchorEl, '<div class="popup__title">' + label + '</div><div class="popup__body">Exactly <strong>' + revealedValues[colName] + '</strong></div>');
+      return;
+    }
+
     if (colName === 'Teams') {
-      // Show range of team count
       const range = computeRange(guesses, g => g.result.teams, g => g.result.teams.value);
       showPopup(anchorEl, '<div class="popup__title">Number of Teams</div><div class="popup__body">' + formatRange(range) + '</div>');
       return;
@@ -319,6 +330,7 @@ const UI = (() => {
   function clearGuesses() {
     rowsEl.innerHTML = '';
     headerEl.innerHTML = '';
+    revealedValues = {};
   }
 
   function showResult(won, player, guessCount) {
@@ -474,6 +486,6 @@ const UI = (() => {
   return {
     init, setupGrid, renderGuess, clearGuesses,
     showResult, hideResult, generateShareText,
-    showLeaderboard, hideLeaderboard,
+    showLeaderboard, hideLeaderboard, revealStat,
   };
 })();

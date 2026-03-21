@@ -15,6 +15,8 @@
   const giveUpBtn = document.getElementById('give-up-btn');
   const newGameBtn = document.getElementById('new-game-btn');
   const shareBtn = document.getElementById('share-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const hintBanner = document.getElementById('hint-banner');
   const leaderboardBtn = document.getElementById('leaderboard-btn');
   const leaderboardClose = document.getElementById('leaderboard-close');
   const leaderboardModal = document.getElementById('leaderboard-modal');
@@ -56,6 +58,7 @@
   giveUpBtn.addEventListener('click', onGiveUp);
   newGameBtn.addEventListener('click', startNewGame);
   shareBtn.addEventListener('click', onShare);
+  hintBtn.addEventListener('click', onHint);
 
   // Leaderboard
   if (leaderboardBtn) {
@@ -87,6 +90,8 @@
     UI.clearGuesses();
     UI.hideResult();
     Autocomplete.setEnabled(true);
+    hintBtn.classList.add('hidden');
+    hintBanner.classList.add('hidden');
 
     const era = eraSelect.value;
     const difficulty = difficultySelect.value;
@@ -106,6 +111,7 @@
         // Lock dropdowns to daily settings
         difficultySelect.value = info.difficulty;
         difficultySelect.disabled = true;
+        eraSelect.disabled = true;
         eraSelect.classList.add('select--daily');
         difficultySelect.classList.add('select--daily');
 
@@ -117,6 +123,7 @@
       // Practice mode
       eraSelect.classList.remove('select--daily');
       difficultySelect.classList.remove('select--daily');
+      eraSelect.disabled = false;
       difficultySelect.disabled = false;
       playerInput.placeholder = 'Type a player name...';
       clearDailyState();
@@ -140,6 +147,7 @@
       const lastGuess = state.guesses[state.guesses.length - 1];
       UI.renderGuess(lastGuess.result);
       giveUpBtn.classList.remove('hidden');
+      updateHintButton();
       if (lastGuess.result.isCorrect) onWin();
       return;
     }
@@ -149,6 +157,7 @@
 
     UI.renderGuess(result);
     giveUpBtn.classList.remove('hidden');
+    updateHintButton();
     saveDailyState();
 
     if (result.isCorrect) {
@@ -159,6 +168,7 @@
   function onWin() {
     const state = Game.getState();
     Autocomplete.setEnabled(false);
+    hintBtn.classList.add('hidden');
     UI.showResult(true, state.mysteryPlayer, state.guesses.length);
 
     if (currentMode === 'daily') {
@@ -172,6 +182,7 @@
     const player = Game.giveUp();
     if (!player) return; // Practice mode with no guesses yet
     Autocomplete.setEnabled(false);
+    hintBtn.classList.add('hidden');
     UI.showResult(false, player, Game.getGuessCount());
 
     if (currentMode === 'daily') {
@@ -180,6 +191,31 @@
       savePracticeResult(false, Game.getGuessCount());
     }
     saveDailyState();
+  }
+
+  function updateHintButton() {
+    const count = Game.getGuessCount();
+    const state = Game.getState();
+    if (count >= 4 && !state.isOver) {
+      hintBtn.classList.remove('hidden');
+    } else {
+      hintBtn.classList.add('hidden');
+    }
+    hintBtn.disabled = false;
+  }
+
+  function onHint() {
+    const hint = Game.useHint();
+    if (!hint) return;
+
+    hintBanner.textContent = hint.text;
+    hintBanner.classList.remove('hidden');
+    hintBtn.disabled = true;
+
+    // If hint reveals a stat value, update the header popup
+    if (hint.colName && hint.value !== undefined) {
+      UI.revealStat(hint.colName, hint.value);
+    }
   }
 
   function onShare() {

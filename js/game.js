@@ -10,6 +10,27 @@ const Game = (() => {
   let isOver = false;
   let isWon = false;
   let dailyInfo = null; // { type, difficulty, era } for daily mode
+  let hintsGiven = [];
+  let hintUsedThisGuess = false;
+
+  // Stat key -> player data property
+  const STAT_DATA_KEY = {
+    avg: 'batting_avg', hr: 'home_runs', rbi: 'rbi', h: 'hits',
+    sb: 'stolen_bases', bb: 'walks', ops: 'ops', xbh_pct: 'xbh_pct', war: 'war',
+    w: 'wins', l: 'losses', era: 'era', so: 'strikeouts', sv: 'saves', whip: 'whip',
+  };
+
+  // Stat key -> column header name
+  const STAT_TO_COL = {
+    avg: 'AVG', hr: 'HR', rbi: 'RBI', h: 'H', sb: 'SB', bb: 'BB',
+    ops: 'OPS', xbh_pct: 'XBH%', war: 'WAR',
+    w: 'W', l: 'L', era: 'ERA', so: 'SO', sv: 'SV', whip: 'WHIP',
+  };
+
+  // Stat key -> decimal places for display
+  const STAT_DECIMALS = {
+    avg: 3, ops: 3, whip: 3, era: 2, xbh_pct: 1, war: 1,
+  };
 
   // Simple seeded hash for daily puzzle
   function dateHash(dateStr) {
@@ -33,6 +54,8 @@ const Game = (() => {
     isWon = false;
     mysteryPlayer = null;
     dailyInfo = null;
+    hintsGiven = [];
+    hintUsedThisGuess = false;
 
     if (mode === 'daily') {
       const today = new Date().toISOString().slice(0, 10);
@@ -80,6 +103,8 @@ const Game = (() => {
       const picked = pickPracticePlayer(DataManager.isHitter(player));
       if (!picked) return null;
     }
+
+    hintUsedThisGuess = false;
 
     const result = compare(player, mysteryPlayer);
     guesses.push({ player, result });
@@ -228,6 +253,76 @@ const Game = (() => {
     return stats;
   }
 
+  function useHint() {
+    if (!mysteryPlayer || isOver) return null;
+    if (guesses.length < 4) return null;
+    if (hintUsedThisGuess) return null;
+
+    const hint = getNextHint();
+    if (!hint) return null;
+
+    hintsGiven.push(hint);
+    hintUsedThisGuess = true;
+    return hint;
+  }
+
+  function getNextHint() {
+    // 1. Primary team
+    if (!hintsGiven.some(h => h.type === 'team')) {
+      return { type: 'team', text: 'Played majority of career with ' + mysteryPlayer.teams[0] };
+    }
+
+    // 2. First name initial (if not yet determined)
+    const firstName = mysteryPlayer.name.split(' ')[0] || '';
+    const firstInitial = firstName.charAt(0).toUpperCase();
+    const firstKnown = guesses.some(g => g.result.name.firstMatch) ||
+      hintsGiven.some(h => h.type === 'firstName');
+    if (!firstKnown) {
+      return { type: 'firstName', text: 'First name starts with "' + firstInitial + '"' };
+    }
+
+    // 3. Last name initial (if not yet determined)
+    const lastName = mysteryPlayer.name.split(' ').slice(1).join(' ') || '';
+    const lastInitial = lastName.charAt(0).toUpperCase();
+    const lastKnown = guesses.some(g => g.result.name.lastMatch) ||
+      hintsGiven.some(h => h.type === 'lastName');
+    if (!lastKnown) {
+      return { type: 'lastName', text: 'Last name starts with "' + lastInitial + '"' };
+    }
+
+    // 4. Undetermined stat
+    const isHitter = DataManager.isHitter(mysteryPlayer);
+    const statKeys = isHitter
+      ? ['avg', 'hr', 'rbi', 'h', 'sb', 'bb', 'ops', 'xbh_pct', 'war']
+      : ['w', 'l', 'era', 'so', 'sv', 'bb', 'whip', 'war'];
+
+    for (const key of statKeys) {
+      if (hintsGiven.some(h => h.type === 'stat' && h.key === key)) continue;
+      const matched = guesses.some(g =>
+        g.result.stats[key] && g.result.stats[key].state === 'match' && g.result.stats[key].direction === 'equal'
+      );
+      if (matched) continue;
+
+      const val = mysteryPlayer[STAT_DATA_KEY[key]];
+      const dec = STAT_DECIMALS[key];
+      const displayVal = dec !== undefined ? val.toFixed(dec) : val;
+      const colName = STAT_TO_COL[key];
+
+      return { type: 'stat', key, colName, value: displayVal, text: 'Career ' + colName + ': ' + displayVal };
+    }
+
+    // 5. Debut year
+    if (!hintsGiven.some(h => h.type === 'debut')) {
+      const debMatched = guesses.some(g => g.result.debut.state === 'match');
+      if (!debMatched) {
+        return { type: 'debut', colName: 'Debut', value: mysteryPlayer.debut_year,
+          text: 'Debuted in ' + mysteryPlayer.debut_year };
+      }
+    }
+
+    return null;
+  }
+
   function getState() {
     return { mysteryPlayer, guesses, mode, era, difficulty, isOver, isWon };
   }
@@ -248,5 +343,5 @@ const Game = (() => {
     return guesses.some(g => g.player.id === playerId);
   }
 
-  return { startGame, makeGuess, giveUp, getState, getMysteryPlayer, getDailyInfo, getGuessCount, alreadyGuessed };
+  return { startGame, makeGuess, giveUp, useHint, getState, getMysteryPlayer, getDailyInfo, getGuessCount, alreadyGuessed };
 })();

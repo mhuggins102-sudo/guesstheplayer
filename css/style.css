@@ -102,6 +102,17 @@ body {
   color: #fff;
 }
 
+.btn--hint {
+  background: var(--color-yellow);
+  color: #1a1a2e;
+  margin-top: 0.5rem;
+  font-weight: 700;
+}
+.btn--hint:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .btn--give-up {
   background: var(--color-gray);
   color: #fff;
@@ -382,6 +393,19 @@ body {
 .leaderboard-btn:hover {
   color: var(--color-text);
   border-color: var(--color-accent);
+}
+
+/* Hint banner */
+.hint-banner {
+  text-align: center;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-yellow);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--color-yellow);
+  font-weight: 600;
 }
 
 /* Daily-locked selects */
