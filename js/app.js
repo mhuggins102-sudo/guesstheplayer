@@ -4,6 +4,7 @@
 (async function () {
   const STORAGE_KEY = 'gtp_daily_state';
   const STREAK_KEY = 'gtp_streak';
+  const PRACTICE_KEY = 'gtp_practice_results';
 
   // DOM elements
   const modeButtons = document.querySelectorAll('[data-mode]');
@@ -14,8 +15,12 @@
   const giveUpBtn = document.getElementById('give-up-btn');
   const newGameBtn = document.getElementById('new-game-btn');
   const shareBtn = document.getElementById('share-btn');
+  const leaderboardBtn = document.getElementById('leaderboard-btn');
+  const leaderboardClose = document.getElementById('leaderboard-close');
+  const leaderboardModal = document.getElementById('leaderboard-modal');
 
   let currentMode = 'daily';
+  let lbFilters = { era: 'all', difficulty: 'all' };
 
   // Initialize
   UI.init();
@@ -53,13 +58,48 @@
   newGameBtn.addEventListener('click', startNewGame);
   shareBtn.addEventListener('click', onShare);
 
+  // Leaderboard
+  if (leaderboardBtn) {
+    leaderboardBtn.addEventListener('click', () => {
+      lbFilters = { era: 'all', difficulty: 'all' };
+      showLeaderboard();
+    });
+  }
+  if (leaderboardClose) {
+    leaderboardClose.addEventListener('click', () => UI.hideLeaderboard());
+  }
+  if (leaderboardModal) {
+    leaderboardModal.addEventListener('click', (e) => {
+      if (e.target === leaderboardModal) UI.hideLeaderboard();
+    });
+    // Filter change listeners (delegated)
+    leaderboardModal.addEventListener('change', (e) => {
+      if (e.target.id === 'lb-era') {
+        lbFilters.era = e.target.value;
+        showLeaderboard();
+      } else if (e.target.id === 'lb-diff') {
+        lbFilters.difficulty = e.target.value;
+        showLeaderboard();
+      }
+    });
+  }
+
   function startNewGame() {
     UI.clearGuesses();
     UI.hideResult();
+    UI.hideDailyInfo();
     Autocomplete.setEnabled(true);
 
     const era = eraSelect.value;
     const difficulty = difficultySelect.value;
+
+    if (currentMode === 'daily') {
+      // Disable difficulty selector — daily auto-determines it
+      difficultySelect.disabled = true;
+    } else {
+      difficultySelect.disabled = false;
+    }
+
     const mystery = Game.startGame(currentMode, era, difficulty);
 
     if (!mystery || mystery.empty) {
@@ -71,12 +111,13 @@
     playerInput.placeholder = 'Type a player name...';
     playerInput.disabled = false;
 
-    // Daily mode: set up grid immediately. Practice: defer until first guess.
-    if (!mystery.deferred) {
+    if (currentMode === 'daily') {
+      const info = Game.getDailyInfo();
+      if (info) UI.showDailyInfo(info);
       UI.setupGrid(mystery);
     }
+    // Practice: defer grid setup until first guess
 
-    // Clear saved state for practice mode
     if (currentMode === 'practice') {
       clearDailyState();
     }
@@ -91,12 +132,10 @@
     // Practice mode: first guess sets up the grid based on player type
     const mystery = Game.getMysteryPlayer();
     if (!mystery) {
-      // This is the first guess in practice mode — makeGuess will pick the mystery player
       Game.makeGuess(player);
       const picked = Game.getMysteryPlayer();
       if (!picked) return;
       UI.setupGrid(picked);
-      // Re-render the first guess now that we have the grid
       const state = Game.getState();
       const lastGuess = state.guesses[state.guesses.length - 1];
       UI.renderGuess(lastGuess.result);
@@ -122,16 +161,21 @@
 
     if (currentMode === 'daily') {
       updateStreak(true);
+    } else {
+      savePracticeResult(true, state.guesses.length);
     }
   }
 
   function onGiveUp() {
     const player = Game.giveUp();
+    if (!player) return; // Practice mode with no guesses yet
     Autocomplete.setEnabled(false);
     UI.showResult(false, player, Game.getGuessCount());
 
     if (currentMode === 'daily') {
       updateStreak(false);
+    } else {
+      savePracticeResult(false, Game.getGuessCount());
     }
     saveDailyState();
   }
@@ -151,7 +195,8 @@
 
   function getDailyStateKey() {
     const today = new Date().toISOString().slice(0, 10);
-    return `${today}-${eraSelect.value}-${difficultySelect.value}`;
+    // Daily difficulty is auto-determined, so key is just date + era
+    return `${today}-${eraSelect.value}`;
   }
 
   function saveDailyState() {
@@ -176,15 +221,18 @@
       const data = JSON.parse(raw);
       if (data.key !== getDailyStateKey()) return false;
 
-      // Restore game
       const era = eraSelect.value;
       const difficulty = difficultySelect.value;
       const mystery = Game.startGame('daily', era, difficulty);
-      if (!mystery) return false;
+      if (!mystery || mystery.empty) return false;
 
+      // Disable difficulty selector for daily
+      difficultySelect.disabled = true;
+
+      const info = Game.getDailyInfo();
+      if (info) UI.showDailyInfo(info);
       UI.setupGrid(mystery);
 
-      // Replay guesses
       const allPlayers = DataManager.getAllPlayers();
       for (const gid of data.guessIds) {
         const player = allPlayers.find(p => p.id === gid);
@@ -215,10 +263,9 @@
       const streak = raw ? JSON.parse(raw) : { current: 0, max: 0, lastDate: '' };
       const today = new Date().toISOString().slice(0, 10);
 
-      if (streak.lastDate === today) return; // Already recorded
+      if (streak.lastDate === today) return;
 
       if (won) {
-        // Check if yesterday was also played
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
         if (streak.lastDate === yesterday) {
           streak.current++;
@@ -232,5 +279,34 @@
       streak.lastDate = today;
       localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
     } catch (e) { /* ignore */ }
+  }
+
+  // -- Practice results tracking --
+
+  function loadPracticeResults() {
+    try {
+      const raw = localStorage.getItem(PRACTICE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+
+  function savePracticeResult(won, guessCount) {
+    try {
+      const results = loadPracticeResults();
+      const state = Game.getState();
+      results.push({
+        date: new Date().toISOString().slice(0, 10),
+        era: state.era,
+        difficulty: state.difficulty,
+        guesses: guessCount,
+        won: won,
+      });
+      localStorage.setItem(PRACTICE_KEY, JSON.stringify(results));
+    } catch (e) { /* ignore */ }
+  }
+
+  function showLeaderboard() {
+    const results = loadPracticeResults();
+    UI.showLeaderboard(results, lbFilters);
   }
 })();

@@ -9,6 +9,7 @@ const Game = (() => {
   let difficulty = 'medium';
   let isOver = false;
   let isWon = false;
+  let dailyInfo = null; // { type, difficulty, era } for daily mode
 
   // Simple seeded hash for daily puzzle
   function dateHash(dateStr) {
@@ -31,21 +32,33 @@ const Game = (() => {
     isOver = false;
     isWon = false;
     mysteryPlayer = null;
-
-    const pool = DataManager.filterPool(era, difficulty);
-    if (pool.length === 0) {
-      return { empty: true };
-    }
+    dailyInfo = null;
 
     if (mode === 'daily') {
       const today = new Date().toISOString().slice(0, 10);
-      const seed = dateHash(today + getDailyKey());
+
+      // Auto-determine type (75% hitter, 25% pitcher) and difficulty (75% easy, 25% medium)
+      const typeSeed = dateHash(today + 'type');
+      const dailyType = (typeSeed % 4) < 3 ? 'hitter' : 'pitcher';
+
+      const diffSeed = dateHash(today + 'diff');
+      difficulty = (diffSeed % 4) < 3 ? 'easy' : 'medium';
+
+      const pool = DataManager.filterPool(era, difficulty).filter(p =>
+        dailyType === 'hitter' ? DataManager.isHitter(p) : !DataManager.isHitter(p)
+      );
+      if (pool.length === 0) return { empty: true };
+
+      const seed = dateHash(today + era);
       const index = seed % pool.length;
       mysteryPlayer = pool[index];
+      dailyInfo = { type: dailyType, difficulty, era };
       return mysteryPlayer;
     }
 
     // Practice mode: defer selection until first guess
+    const pool = DataManager.filterPool(era, difficulty);
+    if (pool.length === 0) return { empty: true };
     return { deferred: true };
   }
 
@@ -128,6 +141,7 @@ const Game = (() => {
       overlap,
       direction: teamCountDir,
       state: teamsExact ? 'match' : overlap > 0 ? 'match' : 'miss',
+      teamNames: guessed.teams,
     };
 
     // Stats — depends on whether target is hitter or pitcher
@@ -222,6 +236,10 @@ const Game = (() => {
     return mysteryPlayer;
   }
 
+  function getDailyInfo() {
+    return dailyInfo;
+  }
+
   function getGuessCount() {
     return guesses.length;
   }
@@ -230,5 +248,5 @@ const Game = (() => {
     return guesses.some(g => g.player.id === playerId);
   }
 
-  return { startGame, makeGuess, giveUp, getState, getMysteryPlayer, getGuessCount, alreadyGuessed };
+  return { startGame, makeGuess, giveUp, getState, getMysteryPlayer, getDailyInfo, getGuessCount, alreadyGuessed };
 })();
