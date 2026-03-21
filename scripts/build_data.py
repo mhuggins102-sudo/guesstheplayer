@@ -156,8 +156,9 @@ def build_war_lookup(filename, bbref_to_player):
     return lookup
 
 
-def build_hitters(people, appearances, batting_rows, war_lookup):
+def build_hitters(people, appearances, batting_rows, war_lookup, mlbam_lookup=None):
     """Aggregate batting stats into career totals."""
+    mlbam_lookup = mlbam_lookup or {}
     # Group batting rows by playerID
     career = defaultdict(lambda: {
         'G': 0, 'AB': 0, 'R': 0, 'H': 0, '2B': 0, '3B': 0,
@@ -208,9 +209,11 @@ def build_hitters(people, appearances, batting_rows, war_lookup):
 
         fame = compute_fame_tier(war, war >= 40)
 
+        mlbam_id = mlbam_lookup.get(bio['bbref_id'])
         hitters.append({
             'id': pid,
             'bbref_id': bio['bbref_id'],
+            'mlbam_id': int(mlbam_id) if mlbam_id else None,
             'name': f"{bio['name_first']} {bio['name_last']}",
             'debut_year': bio['debut_year'],
             'final_year': bio['final_year'],
@@ -232,8 +235,9 @@ def build_hitters(people, appearances, batting_rows, war_lookup):
     return sorted(hitters, key=lambda x: x['name'])
 
 
-def build_pitchers(people, appearances, pitching_rows, war_lookup):
+def build_pitchers(people, appearances, pitching_rows, war_lookup, mlbam_lookup=None):
     """Aggregate pitching stats into career totals."""
+    mlbam_lookup = mlbam_lookup or {}
     career = defaultdict(lambda: {
         'W': 0, 'L': 0, 'G': 0, 'GS': 0, 'CG': 0, 'SHO': 0,
         'SV': 0, 'IPouts': 0, 'H': 0, 'ER': 0, 'HR': 0,
@@ -270,9 +274,11 @@ def build_pitchers(people, appearances, pitching_rows, war_lookup):
 
         fame = compute_fame_tier(war, war >= 40)
 
+        mlbam_id = mlbam_lookup.get(bio['bbref_id'])
         pitchers.append({
             'id': pid,
             'bbref_id': bio['bbref_id'],
+            'mlbam_id': int(mlbam_id) if mlbam_id else None,
             'name': f"{bio['name_first']} {bio['name_last']}",
             'debut_year': bio['debut_year'],
             'final_year': bio['final_year'],
@@ -294,6 +300,23 @@ def build_pitchers(people, appearances, pitching_rows, war_lookup):
     return sorted(pitchers, key=lambda x: x['name'])
 
 
+def build_mlbam_lookup():
+    """Build bbrefID -> MLBAM numeric ID from Chadwick register."""
+    path = os.path.join(RAW, 'chadwick_register.csv')
+    if not os.path.exists(path):
+        print('  Warning: chadwick_register.csv not found, skipping MLBAM IDs')
+        return {}
+    lookup = {}
+    with open(path, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            bbref = (row.get('key_bbref') or '').strip()
+            mlbam = (row.get('key_mlbam') or '').strip()
+            if bbref and mlbam:
+                lookup[bbref] = mlbam
+    return lookup
+
+
 def main():
     print('Loading CSVs...')
     people_rows = read_csv('People.csv')
@@ -306,13 +329,14 @@ def main():
     appearances = build_appearances_lookup(appearances_rows)
     war_bat = build_war_lookup('career_war_bat.csv', bbref_to_player)
     war_pit = build_war_lookup('career_war_pit.csv', bbref_to_player)
+    mlbam_lookup = build_mlbam_lookup()
 
     print('Building hitters...')
-    hitters = build_hitters(people, appearances, batting_rows, war_bat)
+    hitters = build_hitters(people, appearances, batting_rows, war_bat, mlbam_lookup)
     print(f'  {len(hitters)} hitters (min {MIN_PA_HITTER} PA, non-pitcher)')
 
     print('Building pitchers...')
-    pitchers = build_pitchers(people, appearances, pitching_rows, war_pit)
+    pitchers = build_pitchers(people, appearances, pitching_rows, war_pit, mlbam_lookup)
     print(f'  {len(pitchers)} pitchers (min {MIN_IPOUTS_PITCHER} IPouts)')
 
     # Fame tier breakdown

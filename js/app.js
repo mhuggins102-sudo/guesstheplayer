@@ -126,7 +126,6 @@
       eraSelect.disabled = false;
       difficultySelect.disabled = false;
       playerInput.placeholder = 'Type a player name...';
-      clearDailyState();
     }
   }
 
@@ -296,6 +295,7 @@
       if (info) {
         difficultySelect.value = info.difficulty;
         difficultySelect.disabled = true;
+        eraSelect.disabled = true;
         eraSelect.classList.add('select--daily');
         difficultySelect.classList.add('select--daily');
 
@@ -328,10 +328,6 @@
     } catch (e) {
       return false;
     }
-  }
-
-  function clearDailyState() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
   }
 
   function updateStreak(won) {

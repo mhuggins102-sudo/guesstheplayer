@@ -265,7 +265,14 @@ const UI = (() => {
       }
     }
 
+    let imgHtml = '';
+    if (player.mlbam_id) {
+      imgHtml = '<img class="player-card__img" src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/' +
+        player.mlbam_id + '/headshot/67/current" alt="' + player.name + '" />';
+    }
+
     playerCardBody.innerHTML =
+      imgHtml +
       '<div class="player-card__name"><a href="' + bbrefUrl + '" target="_blank" rel="noopener">' +
         player.name + '</a></div>' +
       '<div class="player-card__years">' + years + '</div>' +

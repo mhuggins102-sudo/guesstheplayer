@@ -461,6 +461,15 @@ body {
 .player-card__body {
   padding: 1.25rem 1rem 1rem;
 }
+.player-card__img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 0.5rem;
+  border: 3px solid var(--color-surface-alt);
+  background: var(--color-bg);
+}
 .player-card__name {
   font-size: 1.15rem;
   font-weight: 800;
