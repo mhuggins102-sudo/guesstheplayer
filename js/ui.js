@@ -276,7 +276,9 @@ const UI = (() => {
     if (player.awards && player.awards.length > 0) {
       awardsHtml = '<div class="player-card__awards">' +
         player.awards.map(function(a) {
-          return '<span class="player-card__award">' + a + '</span>';
+          var label = typeof a === 'string' ? a : a.label;
+          var years = (a && a.years) ? a.years : '';
+          return '<span class="player-card__award" title="' + years + '">' + label + '</span>';
         }).join('') + '</div>';
     }
 
@@ -672,7 +674,8 @@ const UI = (() => {
       '<div class="leaderboard__stat"><span class="leaderboard__stat-val">' + median + '</span><span class="leaderboard__stat-label">Median</span></div>' +
       '</div>' +
       '<h3 class="leaderboard__hist-title">Guess Distribution</h3>' +
-      histHtml;
+      histHtml +
+      '<div class="leaderboard__clear"><button class="btn btn--clear-stats" id="lb-clear-btn">Clear Stats</button></div>';
 
     modal.classList.remove('hidden');
   }

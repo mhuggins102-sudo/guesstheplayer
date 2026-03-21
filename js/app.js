@@ -84,6 +84,15 @@
         showLeaderboard();
       }
     });
+    // Clear stats button (delegated)
+    leaderboardModal.addEventListener('click', (e) => {
+      if (e.target.id === 'lb-clear-btn') {
+        if (confirm('Clear all practice stats? This cannot be undone.')) {
+          clearPracticeResults();
+          showLeaderboard();
+        }
+      }
+    });
   }
 
   function startNewGame() {
@@ -361,6 +370,10 @@
       const raw = localStorage.getItem(PRACTICE_KEY);
       return raw ? JSON.parse(raw) : [];
     } catch (e) { return []; }
+  }
+
+  function clearPracticeResults() {
+    try { localStorage.removeItem(PRACTICE_KEY); } catch (e) { /* ignore */ }
   }
 
   function savePracticeResult(won, guessCount) {

@@ -323,32 +323,31 @@ DISPLAY_AWARDS = {
 
 
 def build_awards_lookup():
-    """Build playerID -> list of award strings like '3x Gold Glove'."""
+    """Build playerID -> list of {label, years} award objects."""
     path = os.path.join(RAW, 'AwardsPlayers.csv')
     if not os.path.exists(path):
         print('  Warning: AwardsPlayers.csv not found, skipping awards')
         return {}
-    # Count awards per player per award type
-    counts = defaultdict(lambda: defaultdict(int))
+    # Collect years per player per award type
+    award_years = defaultdict(lambda: defaultdict(list))
     with open(path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
         for row in reader:
             pid = (row.get('playerID') or '').strip()
             award = (row.get('awardID') or '').strip()
-            if pid and award and award in DISPLAY_AWARDS:
-                counts[pid][award] += 1
-    # Format as display strings
+            year = (row.get('yearID') or '').strip()
+            if pid and award and award in DISPLAY_AWARDS and year:
+                award_years[pid][award].append(int(year))
+    # Format as display objects
     lookup = {}
-    for pid, awards in counts.items():
+    for pid, awards in award_years.items():
         display = []
         for award_id, short in DISPLAY_AWARDS.items():
-            count = awards.get(award_id, 0)
-            if count == 0:
+            years = sorted(awards.get(award_id, []))
+            if not years:
                 continue
-            if count == 1:
-                display.append(short)
-            else:
-                display.append(f'{count}x {short}')
+            label = f'{len(years)}x {short}' if len(years) > 1 else short
+            display.append({'label': label, 'years': ', '.join(str(y) for y in years)})
         if display:
             lookup[pid] = display
     return lookup

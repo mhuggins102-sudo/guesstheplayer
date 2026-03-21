@@ -669,3 +669,24 @@ body {
   color: var(--color-text-muted);
   flex-shrink: 0;
 }
+
+/* Clear stats */
+.leaderboard__clear {
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-surface-alt);
+}
+.btn--clear-stats {
+  background: transparent;
+  color: var(--color-red);
+  border: 1px solid var(--color-red);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  opacity: 0.7;
+}
+.btn--clear-stats:hover {
+  opacity: 1;
+  background: var(--color-red);
+  color: #fff;
+}
