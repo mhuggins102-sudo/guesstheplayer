@@ -354,46 +354,141 @@ const UI = (() => {
     newGameBtn.classList.add('hidden');
   }
 
-  // -- Share text --
+  // -- Share image (canvas roundRect polyfill for older browsers) --
 
-  function generateShareText(state) {
-    const guesses = state.guesses;
-    const lines = [`Guess The Player - MLB`];
-    lines.push(`${state.mode === 'daily' ? 'Daily' : 'Practice'} | ${state.era} | ${state.difficulty}`);
-
-    if (state.isWon) {
-      lines.push(`Solved in ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}`);
+  function fillRoundRect(ctx, x, y, w, h, r) {
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r);
+      ctx.fill();
     } else {
-      lines.push(`Gave up after ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}`);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fill();
     }
-
-    lines.push('');
-    for (const g of guesses) {
-      const r = g.result;
-      let row = '';
-      row += r.isCorrect ? '\u2b50' : '\u2b1b';
-      if (currentType === 'hitter') {
-        row += stateEmoji(r.position.state);
-      }
-      row += stateEmoji(r.debut.state);
-      row += stateEmoji(r.teams.state);
-      const statKeys = currentType === 'hitter' ? HITTER_STAT_KEYS : PITCHER_STAT_KEYS;
-      for (const key of statKeys) {
-        row += stateEmoji(r.stats[key].state);
-      }
-      lines.push(row);
-    }
-
-    return lines.join('\n');
   }
 
-  function stateEmoji(state) {
-    switch (state) {
-      case 'match': return '\ud83d\udfe9';
-      case 'close': return '\ud83d\udfe8';
-      case 'miss': return '\ud83d\udfe5';
-      default: return '\u2b1c';
+  function generateShareImage(state) {
+    const guesses = state.guesses;
+    const isHitter = currentType === 'hitter';
+    const statKeys = isHitter ? HITTER_STAT_KEYS : PITCHER_STAT_KEYS;
+
+    // Column count: Name + (Pos if hitter) + Debut + Teams + stats
+    const colCount = 1 + (isHitter ? 1 : 0) + 2 + statKeys.length;
+
+    // Layout constants
+    const sq = 26;       // square size
+    const gap = 4;       // gap between squares
+    const pad = 28;      // padding
+    const headerH = 100; // space for title/info
+    const footerH = 36;  // bottom branding
+    const rowH = sq + gap;
+
+    const gridW = colCount * (sq + gap) - gap;
+    const canvasW = gridW + pad * 2;
+    const canvasH = headerH + guesses.length * rowH + footerH + pad;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Title
+    ctx.fillStyle = '#e8e8e8';
+    ctx.font = 'bold 18px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Guess The Player', canvasW / 2, pad + 20);
+
+    ctx.fillStyle = '#a0a0b0';
+    ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText('MLB Edition', canvasW / 2, pad + 38);
+
+    // Mode / era / difficulty
+    const eraLabel = ERA_LABELS[state.era] || state.era;
+    const modeLabel = state.mode === 'daily' ? 'Daily' : 'Practice';
+    const diffLabel = state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1);
+    ctx.fillText(modeLabel + '  |  ' + eraLabel + '  |  ' + diffLabel, canvasW / 2, pad + 54);
+
+    // Result line
+    ctx.fillStyle = state.isWon ? '#2ecc71' : '#e74c3c';
+    ctx.font = 'bold 13px "Segoe UI", system-ui, sans-serif';
+    const resultText = state.isWon
+      ? 'Solved in ' + guesses.length + ' guess' + (guesses.length !== 1 ? 'es' : '')
+      : 'Gave up after ' + guesses.length + ' guess' + (guesses.length !== 1 ? 'es' : '');
+    ctx.fillText(resultText, canvasW / 2, pad + 72);
+
+    // Color map
+    const stateColor = {
+      match: '#2ecc71',
+      close: '#f1c40f',
+      miss: '#e74c3c',
+      neutral: '#636e72',
+    };
+
+    // Draw grid
+    const gridX = pad;
+    const gridY = headerH;
+
+    for (let i = 0; i < guesses.length; i++) {
+      const r = guesses[i].result;
+      const y = gridY + i * rowH;
+      let col = 0;
+
+      // Name square
+      ctx.fillStyle = r.isCorrect ? '#f1c40f' : '#2b2b4a';
+      fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
+      col++;
+
+      // Position (hitters only)
+      if (isHitter) {
+        ctx.fillStyle = stateColor[r.position.state] || '#636e72';
+        fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
+        col++;
+      }
+
+      // Debut
+      ctx.fillStyle = stateColor[r.debut.state] || '#636e72';
+      fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
+      col++;
+
+      // Teams
+      ctx.fillStyle = stateColor[r.teams.state] || '#636e72';
+      fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
+      col++;
+
+      // Stats
+      for (const key of statKeys) {
+        ctx.fillStyle = stateColor[r.stats[key].state] || '#636e72';
+        fillRoundRect(ctx, gridX + col * (sq + gap), y, sq, sq, 4);
+        col++;
+      }
     }
+
+    // Footer
+    ctx.fillStyle = '#636e72';
+    ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('guesstheplayer.com', canvasW / 2, canvasH - 10);
+
+    return canvas;
+  }
+
+  function getShareImageBlob(state) {
+    const canvas = generateShareImage(state);
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
   }
 
   // -- Leaderboard --
@@ -485,7 +580,7 @@ const UI = (() => {
 
   return {
     init, setupGrid, renderGuess, clearGuesses,
-    showResult, hideResult, generateShareText,
+    showResult, hideResult, getShareImageBlob,
     showLeaderboard, hideLeaderboard, revealStat,
   };
 })();

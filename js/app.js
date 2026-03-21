@@ -218,15 +218,42 @@
     }
   }
 
-  function onShare() {
+  async function onShare() {
     const state = Game.getState();
-    const text = UI.generateShareText(state);
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        shareBtn.textContent = 'Copied!';
-        setTimeout(() => { shareBtn.textContent = 'Share Results'; }, 2000);
-      });
+    const blob = await UI.getShareImageBlob(state);
+    if (!blob) return;
+
+    const file = new File([blob], 'guess-the-player.png', { type: 'image/png' });
+
+    // Try native share (mobile)
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return; // user cancelled
+      }
     }
+
+    // Try clipboard image copy (desktop)
+    if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        shareBtn.textContent = 'Image Copied!';
+        setTimeout(() => { shareBtn.textContent = 'Share Results'; }, 2000);
+        return;
+      } catch (e) { /* fall through */ }
+    }
+
+    // Fallback: download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'guess-the-player.png';
+    a.click();
+    URL.revokeObjectURL(url);
+    shareBtn.textContent = 'Downloaded!';
+    setTimeout(() => { shareBtn.textContent = 'Share Results'; }, 2000);
   }
 
   // -- Daily state persistence --
