@@ -467,6 +467,7 @@ body {
   gap: 4px;
   justify-content: center;
   margin-bottom: 0.6rem;
+  padding: 0 1.5rem;
 }
 .player-card__award {
   font-size: 0.62rem;
