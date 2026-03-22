@@ -664,7 +664,8 @@ const UI = (() => {
     const gridW = nameW + gap + colCount * (cellW + gap) - gap;
     const canvasW = gridW + pad * 2;
     const rowH = cellH + gap;
-    const canvasH = headerH + colHeaderH + gap + guesses.length * rowH + footerH + pad;
+    const revealRowExtra = !state.isWon && state.mysteryPlayer ? rowH + 8 : 0; // separator + answer row
+    const canvasH = headerH + colHeaderH + gap + guesses.length * rowH + revealRowExtra + footerH + pad;
 
     const scale = 2; // HiDPI: render at 2x for sharp output
     const canvas = document.createElement('canvas');
@@ -803,6 +804,58 @@ const UI = (() => {
           if (ctx.measureText(cellText).width <= cellW - 6) {
             ctx.fillText(cellText, x + cellW / 2, y + cellH / 2 + 3);
           }
+        }
+      }
+    }
+
+    // Reveal row (give-up): show mystery player with plain styling
+    if (!state.isWon && state.mysteryPlayer) {
+      const revealResult = Game.compare(state.mysteryPlayer, state.mysteryPlayer);
+      const ry = dataY + guesses.length * rowH;
+
+      // Separator line
+      ctx.strokeStyle = '#636e72';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(gridX, ry + 2);
+      ctx.lineTo(gridX + gridW, ry + 2);
+      ctx.stroke();
+
+      const answerY = ry + 8;
+
+      // Name cell
+      ctx.fillStyle = '#16213e';
+      fillRoundRect(ctx, gridX, answerY, nameW, cellH, 4);
+      ctx.fillStyle = '#e8e8e8';
+      ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      let revealName = state.mysteryPlayer.name;
+      while (ctx.measureText(revealName).width > nameW - 10 && revealName.length > 3) {
+        revealName = revealName.slice(0, -2) + '…';
+      }
+      ctx.fillText(revealName, gridX + 6, answerY + cellH / 2 + 4);
+
+      // Stat cells — plain (surface color, no state highlighting)
+      const revealCells = [];
+      if (isHitter) {
+        revealCells.push(revealResult.position.value);
+      }
+      revealCells.push(revealResult.debut.value);
+      revealCells.push(revealResult.teams.value);
+      for (const key of statKeys) {
+        revealCells.push(revealResult.stats[key].value);
+      }
+
+      ctx.textAlign = 'center';
+      for (let c = 0; c < revealCells.length; c++) {
+        const x = gridX + nameW + gap + c * (cellW + gap);
+        ctx.fillStyle = '#16213e';
+        fillRoundRect(ctx, x, answerY, cellW, cellH, 4);
+        ctx.fillStyle = '#e8e8e8';
+        ctx.font = 'bold 9px "Segoe UI", system-ui, sans-serif';
+        const val = '' + revealCells[c];
+        if (ctx.measureText(val).width <= cellW - 6) {
+          ctx.fillText(val, x + cellW / 2, answerY + cellH / 2 + 3);
         }
       }
     }
