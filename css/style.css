@@ -511,11 +511,17 @@ body {
   color: var(--color-text-muted);
   margin-bottom: 0;
 }
+.help-categories > .help-cat-group:first-child {
+  margin-top: 0.5rem;
+}
+.help-cat--spaced {
+  margin-top: 0.5rem;
+}
 .help-stat-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
-  margin-top: 0.3rem;
+  margin-top: 0.1rem;
 }
 .help-stat-table th,
 .help-stat-table td {
