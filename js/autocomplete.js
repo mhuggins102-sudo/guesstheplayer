@@ -44,6 +44,8 @@ const Autocomplete = (() => {
       e.preventDefault();
       if (activeIndex >= 0 && activeIndex < items.length) {
         selectItem(items[activeIndex]);
+      } else if (items.length > 0) {
+        selectItem(items[0]);
       }
     } else if (e.key === 'Escape') {
       close();

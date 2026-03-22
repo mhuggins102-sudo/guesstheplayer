@@ -326,30 +326,44 @@ const UI = (() => {
       '<div class="player-card__divider"></div>' +
       '<div class="player-card__stats">' + statsHtml + '</div>';
 
-    // Award tap to show years
+    // Award interaction: hover on desktop, tap on mobile
     var awardsEl = playerCardBody.querySelector('.player-card__awards');
     var detailEl = playerCardBody.querySelector('#award-detail');
     if (awardsEl && detailEl) {
-      awardsEl.addEventListener('click', function(e) {
-        var badge = e.target.closest('[data-award-years]');
-        if (!badge) return;
+      var showAward = function(badge) {
         var years = badge.getAttribute('data-award-years');
         if (!years) return;
-        var label = badge.textContent;
-        // Toggle: tap same badge again to hide
-        if (badge.classList.contains('player-card__award--active')) {
-          badge.classList.remove('player-card__award--active');
-          detailEl.textContent = '';
-          detailEl.classList.remove('player-card__award-detail--visible');
-        } else {
-          awardsEl.querySelectorAll('.player-card__award--active').forEach(function(el) {
-            el.classList.remove('player-card__award--active');
-          });
-          badge.classList.add('player-card__award--active');
-          detailEl.textContent = label + ': ' + years;
-          detailEl.classList.add('player-card__award-detail--visible');
-        }
-      });
+        awardsEl.querySelectorAll('.player-card__award--active').forEach(function(el) {
+          el.classList.remove('player-card__award--active');
+        });
+        badge.classList.add('player-card__award--active');
+        detailEl.textContent = badge.textContent + ': ' + years;
+        detailEl.classList.add('player-card__award-detail--visible');
+      };
+      var hideAward = function() {
+        awardsEl.querySelectorAll('.player-card__award--active').forEach(function(el) {
+          el.classList.remove('player-card__award--active');
+        });
+        detailEl.textContent = '';
+        detailEl.classList.remove('player-card__award-detail--visible');
+      };
+
+      if (canHover) {
+        awardsEl.querySelectorAll('[data-award-years]').forEach(function(badge) {
+          badge.addEventListener('mouseenter', function() { showAward(badge); });
+          badge.addEventListener('mouseleave', hideAward);
+        });
+      } else {
+        awardsEl.addEventListener('click', function(e) {
+          var badge = e.target.closest('[data-award-years]');
+          if (!badge) return;
+          if (badge.classList.contains('player-card__award--active')) {
+            hideAward();
+          } else {
+            showAward(badge);
+          }
+        });
+      }
     }
 
     // On desktop hover: overlay ignores pointer so name cell keeps mouseenter/leave
