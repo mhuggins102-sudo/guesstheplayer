@@ -343,5 +343,5 @@ const Game = (() => {
     return guesses.some(g => g.player.id === playerId);
   }
 
-  return { startGame, makeGuess, giveUp, useHint, getState, getMysteryPlayer, getDailyInfo, getGuessCount, alreadyGuessed };
+  return { startGame, makeGuess, giveUp, useHint, getState, getMysteryPlayer, getDailyInfo, getGuessCount, alreadyGuessed, compare };
 })();

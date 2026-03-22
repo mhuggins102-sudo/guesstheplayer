@@ -412,6 +412,65 @@ const UI = (() => {
     row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
+  function renderRevealRow(player) {
+    const result = Game.compare(player, player);
+    const row = document.createElement('div');
+    row.className = 'guess-row';
+
+    // Name cell (clickable for player card)
+    const nameCell = document.createElement('div');
+    nameCell.className = 'guess-cell guess-cell--name';
+    nameCell.style.cursor = 'pointer';
+    if (canHover) {
+      nameCell.addEventListener('mouseenter', () => {
+        clearTimeout(cardHoverTimer);
+        showPlayerCard(player);
+      });
+      nameCell.addEventListener('mouseleave', () => {
+        cardHoverTimer = setTimeout(() => playerCardModal.classList.add('hidden'), 200);
+      });
+    } else {
+      nameCell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPlayerCard(player);
+      });
+    }
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = player.name;
+    nameCell.appendChild(nameSpan);
+    row.appendChild(nameCell);
+
+    // Position (hitters only)
+    if (currentType === 'hitter') {
+      row.appendChild(buildPlainCell(result.position.value));
+    }
+
+    // Debut
+    row.appendChild(buildPlainCell(result.debut.value));
+
+    // Teams
+    row.appendChild(buildPlainCell(result.teams.value));
+
+    // Stats
+    const statKeys = currentType === 'hitter' ? HITTER_STAT_KEYS : PITCHER_STAT_KEYS;
+    for (const key of statKeys) {
+      row.appendChild(buildPlainCell(result.stats[key].value));
+    }
+
+    rowsEl.appendChild(row);
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function buildPlainCell(value) {
+    const cell = document.createElement('div');
+    cell.className = 'guess-cell';
+    const valEl = document.createElement('span');
+    valEl.className = 'guess-cell__value';
+    valEl.textContent = value;
+    cell.appendChild(valEl);
+    return cell;
+  }
+
   function buildNameCell(nameData, player) {
     const cell = document.createElement('div');
     cell.className = 'guess-cell guess-cell--name';
@@ -852,7 +911,7 @@ const UI = (() => {
   }
 
   return {
-    init, setupGrid, renderGuess, clearGuesses,
+    init, setupGrid, renderGuess, renderRevealRow, clearGuesses,
     showResult, hideResult, getShareImageBlob,
     showLeaderboard, hideLeaderboard, revealStat,
   };

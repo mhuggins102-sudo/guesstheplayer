@@ -209,6 +209,7 @@
   function onGiveUp() {
     const player = Game.giveUp();
     if (!player) return; // Practice mode with no guesses yet
+    UI.renderRevealRow(player);
     Autocomplete.setEnabled(false);
     hintBtn.classList.add('hidden');
     UI.showResult(false, player, Game.getGuessCount(), currentMode === 'daily');
