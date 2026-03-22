@@ -609,13 +609,9 @@ body {
   font-size: 0.7rem;
   color: var(--color-text-muted);
   text-align: center;
-  min-height: 0;
-  overflow: hidden;
-  transition: min-height 0.15s;
-}
-.player-card__award-detail--visible {
   min-height: 1.2em;
   margin-bottom: 0.3rem;
+  overflow: hidden;
 }
 .player-card__img {
   display: block;

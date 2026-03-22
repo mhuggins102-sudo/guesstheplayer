@@ -312,7 +312,7 @@ const UI = (() => {
           var years = (a && a.years) ? a.years : '';
           return '<span class="player-card__award" data-award-idx="' + i + '" data-award-years="' + years + '">' + label + '</span>';
         }).join('') + '</div>' +
-        '<div class="player-card__award-detail" id="award-detail"></div>';
+        '<div class="player-card__award-detail" id="award-detail">\u00A0</div>';
     }
 
     playerCardBody.innerHTML =
@@ -338,14 +338,12 @@ const UI = (() => {
         });
         badge.classList.add('player-card__award--active');
         detailEl.textContent = badge.textContent + ': ' + years;
-        detailEl.classList.add('player-card__award-detail--visible');
       };
       var hideAward = function() {
         awardsEl.querySelectorAll('.player-card__award--active').forEach(function(el) {
           el.classList.remove('player-card__award--active');
         });
-        detailEl.textContent = '';
-        detailEl.classList.remove('player-card__award-detail--visible');
+        detailEl.textContent = '\u00A0'; // keep space reserved
       };
 
       if (canHover) {
