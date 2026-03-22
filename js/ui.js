@@ -352,6 +352,15 @@ const UI = (() => {
       });
     }
 
+    // On desktop hover: overlay ignores pointer so name cell keeps mouseenter/leave
+    if (canHover) {
+      playerCardModal.style.pointerEvents = 'none';
+      playerCardModal.querySelector('.player-card').style.pointerEvents = 'auto';
+    } else {
+      playerCardModal.style.pointerEvents = '';
+      playerCardModal.querySelector('.player-card').style.pointerEvents = '';
+    }
+
     playerCardModal.classList.remove('hidden');
   }
 
