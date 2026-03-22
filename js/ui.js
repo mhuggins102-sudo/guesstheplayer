@@ -38,6 +38,7 @@ const UI = (() => {
   let revealedValues = {}; // colName -> display value (from hints)
   const canHover = window.matchMedia('(hover: hover)').matches;
   let hoverAnchor = null; // track which element triggered a hover popup
+  let cardHoverTimer = null; // delay timer for player card hover dismiss
 
   function init() {
     headerEl = document.getElementById('guesses-header');
@@ -60,6 +61,16 @@ const UI = (() => {
       playerCardModal.addEventListener('click', (e) => {
         if (e.target === playerCardModal) playerCardModal.classList.add('hidden');
       });
+      if (canHover) {
+        // Keep card open while hovering over the modal content
+        playerCardModal.querySelector('.player-card').addEventListener('mouseenter', () => {
+          clearTimeout(cardHoverTimer);
+        });
+        // Dismiss when leaving the modal content area (onto the overlay)
+        playerCardModal.querySelector('.player-card').addEventListener('mouseleave', () => {
+          cardHoverTimer = setTimeout(() => playerCardModal.classList.add('hidden'), 150);
+        });
+      }
     }
 
     // Create reusable popup element
@@ -385,10 +396,20 @@ const UI = (() => {
     cell.className = 'guess-cell guess-cell--name';
     if (player) {
       cell.style.cursor = 'pointer';
-      cell.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showPlayerCard(player);
-      });
+      if (canHover) {
+        cell.addEventListener('mouseenter', () => {
+          clearTimeout(cardHoverTimer);
+          showPlayerCard(player);
+        });
+        cell.addEventListener('mouseleave', () => {
+          cardHoverTimer = setTimeout(() => playerCardModal.classList.add('hidden'), 200);
+        });
+      } else {
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showPlayerCard(player);
+        });
+      }
     }
 
     const parts = nameData.value.split(' ');
