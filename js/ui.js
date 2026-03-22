@@ -664,7 +664,7 @@ const UI = (() => {
     const gridW = nameW + gap + colCount * (cellW + gap) - gap;
     const canvasW = gridW + pad * 2;
     const rowH = cellH + gap;
-    const revealRowExtra = !state.isWon && state.mysteryPlayer ? rowH + 8 : 0; // separator + answer row
+    const revealRowExtra = !state.isWon && state.mysteryPlayer ? rowH : 0; // answer row
     const canvasH = headerH + colHeaderH + gap + guesses.length * rowH + revealRowExtra + footerH + pad;
 
     const scale = 2; // HiDPI: render at 2x for sharp output
@@ -811,17 +811,7 @@ const UI = (() => {
     // Reveal row (give-up): show mystery player with plain styling
     if (!state.isWon && state.mysteryPlayer) {
       const revealResult = Game.compare(state.mysteryPlayer, state.mysteryPlayer);
-      const ry = dataY + guesses.length * rowH;
-
-      // Separator line
-      ctx.strokeStyle = '#636e72';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(gridX, ry + 2);
-      ctx.lineTo(gridX + gridW, ry + 2);
-      ctx.stroke();
-
-      const answerY = ry + 8;
+      const answerY = dataY + guesses.length * rowH;
 
       // Name cell
       ctx.fillStyle = '#16213e';
