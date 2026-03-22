@@ -36,6 +36,8 @@ const UI = (() => {
   let playerCardModal, playerCardBody, playerCardClose;
   let currentType = null;
   let revealedValues = {}; // colName -> display value (from hints)
+  const canHover = window.matchMedia('(hover: hover)').matches;
+  let hoverAnchor = null; // track which element triggered a hover popup
 
   function init() {
     headerEl = document.getElementById('guesses-header');
@@ -65,12 +67,18 @@ const UI = (() => {
     popupEl.className = 'popup hidden';
     document.body.appendChild(popupEl);
 
-    // Dismiss popup on click outside
+    // Dismiss popup on click outside (touch/mobile)
     document.addEventListener('click', (e) => {
       if (!popupEl.contains(e.target) && !e.target.closest('[data-popup]')) {
         hidePopup();
       }
     });
+
+    // Keep popup visible while hovering over the popup itself on desktop
+    if (canHover) {
+      popupEl.addEventListener('mouseenter', () => { hoverAnchor = popupEl; });
+      popupEl.addEventListener('mouseleave', () => { hoverAnchor = null; hidePopup(); });
+    }
   }
 
   // -- Popup helpers --
@@ -94,6 +102,7 @@ const UI = (() => {
 
   function hidePopup() {
     popupEl.classList.add('hidden');
+    hoverAnchor = null;
   }
 
   function revealStat(colName, value) {
@@ -115,14 +124,24 @@ const UI = (() => {
       cell.textContent = col;
       cell.style.textAlign = 'center';
 
-      // Stat headers are clickable for range info
+      // Stat headers show range info
       if (col !== 'Name') {
         cell.setAttribute('data-popup', col);
         cell.style.cursor = 'pointer';
-        cell.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onHeaderClick(col, cell);
-        });
+        if (canHover) {
+          cell.addEventListener('mouseenter', () => {
+            hoverAnchor = cell;
+            onHeaderClick(col, cell);
+          });
+          cell.addEventListener('mouseleave', () => {
+            setTimeout(() => { if (hoverAnchor !== popupEl) hidePopup(); }, 50);
+          });
+        } else {
+          cell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onHeaderClick(col, cell);
+          });
+        }
       }
 
       headerEl.appendChild(cell);
@@ -438,15 +457,28 @@ const UI = (() => {
       cell.appendChild(arrow);
     }
 
-    // Click to show team list
+    // Show team list on hover (desktop) or click (mobile)
     const teamNames = teams.teamNames || [];
-    cell.addEventListener('click', (e) => {
-      e.stopPropagation();
+    const showTeamPopup = () => {
       if (teamNames.length === 0) return;
       const html = '<div class="popup__title">Teams (' + teamNames.length + ')</div>' +
         '<div class="popup__body">' + teamNames.join('<br>') + '</div>';
       showPopup(cell, html);
-    });
+    };
+    if (canHover) {
+      cell.addEventListener('mouseenter', () => {
+        hoverAnchor = cell;
+        showTeamPopup();
+      });
+      cell.addEventListener('mouseleave', () => {
+        setTimeout(() => { if (hoverAnchor !== popupEl) hidePopup(); }, 50);
+      });
+    } else {
+      cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showTeamPopup();
+      });
+    }
 
     return cell;
   }
