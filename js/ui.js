@@ -25,6 +25,20 @@ const UI = (() => {
     'WHIP': 'whip',
   };
 
+  // Yellow ("close") thresholds per stat key – must match game.js compareNumeric calls
+  const CLOSE_THRESHOLDS = {
+    avg: 0.01, hr: 30, rbi: 100, h: 150, sb: 30, bb: 80,
+    ops: 0.03, xbh_pct: 3, war: 5,
+    w: 15, l: 15, era: 0.3, so: 200, sv: 20, whip: 0.05,
+    debut: 3,
+  };
+
+  // Decimal places for display rounding per stat key – must match game.js
+  const STAT_DECIMALS = {
+    avg: 3, ops: 3, xbh_pct: 1, war: 1,
+    era: 2, whip: 3,
+  };
+
   const ERA_LABELS = {
     'all': 'All-Time', '1940': '1940+', '1960': '1960+', '1980': '1980+',
     '2000': '2000+', 'active': 'Active',
@@ -197,7 +211,7 @@ const UI = (() => {
     }
 
     if (colName === 'Debut') {
-      const range = computeRange(guesses, g => g.result.debut, g => parseFloat(g.result.debut.value));
+      const range = computeRange(guesses, g => g.result.debut, g => parseFloat(g.result.debut.value), CLOSE_THRESHOLDS.debut, 0);
       showPopup(anchorEl, '<div class="popup__title">Debut Year</div><div class="popup__body">' + formatRange(range, true) + '</div>');
       return;
     }
@@ -213,13 +227,21 @@ const UI = (() => {
       g => {
         const s = g.result.stats[statKey];
         return s && s.value !== 'N/A' ? parseFloat(s.value) : null;
-      }
+      },
+      CLOSE_THRESHOLDS[statKey],
+      STAT_DECIMALS[statKey]
     );
     showPopup(anchorEl, '<div class="popup__title">' + label + '</div><div class="popup__body">' + formatRange(range) + '</div>');
   }
 
-  function computeRange(guesses, getStat, getVal) {
+  function computeRange(guesses, getStat, getVal, threshold, decimals) {
     let lower = null, upper = null, exact = null;
+
+    function round(v) {
+      if (decimals === undefined || decimals === null) return v;
+      var factor = Math.pow(10, decimals);
+      return Math.round(v * factor) / factor;
+    }
 
     for (const g of guesses) {
       const stat = getStat(g);
@@ -230,9 +252,19 @@ const UI = (() => {
       if (stat.state === 'match' && stat.direction === 'equal') {
         exact = val;
       } else if (stat.direction === 'up') {
+        // Mystery player's value is higher than guessed value
         lower = lower !== null ? Math.max(lower, val) : val;
+        if (stat.state === 'close' && threshold) {
+          var yellowUpper = round(val + threshold);
+          upper = upper !== null ? Math.min(upper, yellowUpper) : yellowUpper;
+        }
       } else if (stat.direction === 'down') {
+        // Mystery player's value is lower than guessed value
         upper = upper !== null ? Math.min(upper, val) : val;
+        if (stat.state === 'close' && threshold) {
+          var yellowLower = round(val - threshold);
+          lower = lower !== null ? Math.max(lower, yellowLower) : yellowLower;
+        }
       }
     }
 
